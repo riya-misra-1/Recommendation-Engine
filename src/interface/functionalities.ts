@@ -1,5 +1,7 @@
 export interface Functionalities {
-  [key: string]: string[];
+  Admin: string[];
+  Chef: string[];
+  Employee: string[];
 }
 
 export const RoleFunctionalities: Functionalities = {
