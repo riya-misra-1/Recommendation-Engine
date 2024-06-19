@@ -1,7 +1,23 @@
+import pool from "../db-connection";
+
 export class AdminService {
-  addMenuItem() {
-    console.log("Add menu item functionality executed");
-    // Implement add menu item functionality here
+  async addMenuItem(menuItem: {
+    category: string;
+    name: string;
+    price: number;
+    availability: boolean;
+  }) {
+    const { category, name, price, availability } = menuItem;
+    try {
+      await pool.execute(
+        "INSERT INTO food_items (category, name, price, availability) VALUES (?, ?, ?, ?)",
+        [category, name, price, availability]
+      );
+      console.log("Menu item added successfully");
+    } catch (error) {
+      console.error("Error adding menu item:", error);
+      throw error;
+    }
   }
 
   updateMenuItem() {
@@ -22,7 +38,7 @@ export class AdminService {
   executeAdminFunctionality(index: number) {
     switch (index) {
       case 0:
-        this.addMenuItem();
+        // this.addMenuItem();
         break;
       case 1:
         this.updateMenuItem();

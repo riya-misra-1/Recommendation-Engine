@@ -1,49 +1,65 @@
 import { io, Socket } from "socket.io-client";
-import readline from "readline";
+import { AdminClient } from "../src/client/adminClientUI";
+import { User } from "./interface/user";
+import { getInputFromClient } from "../src/utils/promptMessage";
 
 const socket: Socket = io("http://localhost:3000");
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+const adminClient = new AdminClient();
 
-function inputUserCredentials() {
-  rl.question("Enter your email: ", (email) => {
-    rl.question("Enter your password: ", (password) => {
-      socket.emit("login", email, password);
-    });
-  });
+async function inputUserCredentials() {
+  const email = await getInputFromClient("Enter your email: ");
+  const password = await getInputFromClient("Enter your password: ");
+  socket.emit("login", email, password);
 }
 
-socket.on("functionalities", (functionalities: string[]) => {
-  console.log("Available functionalities:");
-  functionalities.forEach((func, index) => {
-    console.log(`${index + 1}. ${func}`);
-  });
+socket.on(
+  "functionalities",
+  async (functionalities: string[], role: string) => {
+    console.log("Available functionalities:");
+    functionalities.forEach((func, index) => {
+      console.log(`${index + 1}. ${func}`);
+    });
 
-  rl.question("Enter the functionality number to execute: ", (input) => {
+    const input = await getInputFromClient(
+      "Enter the functionality number to execute: "
+    );
     const index = parseInt(input) - 1;
+
     if (index >= 0 && index < functionalities.length) {
-      socket.emit("executeFunctionality", index, functionalities);
+      let foodItem;
+
+      switch (role) {
+        case "Admin":
+          foodItem = await adminClient.handleAdminFunctionalities(index);
+          console.log('FoodItemm is received',foodItem);
+          break;
+        // Add cases for Chef and Employee
+        default:
+          console.error("Unknown role");
+          return;
+      }
+
+        socket.emit("executeFunctionality", index, functionalities, foodItem);
     } else {
       console.log("Invalid input. Please enter a valid functionality number.");
-      rl.close();
     }
-  });
-});
+  }
+);
 
-socket.on("loginSuccess", (user: any) => {
+socket.on("loginSuccess", (user: User) => {
   console.log("Login successful.");
 });
 
 socket.on("loginFailure", (message: string) => {
   console.error(message);
-  rl.close();
 });
 
 socket.on("error", (message: string) => {
   console.error("Error:", message);
-  rl.close();
+});
+
+socket.on("disconnect", () => {
+  console.error("Server disconnected or stopped.");
 });
 
 inputUserCredentials();

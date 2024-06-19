@@ -24,43 +24,46 @@ io.on("connection", (socket: Socket) => {
       socket.emit("loginFailure", result.error);
     } else if (result.functionalities && result.role) {
       socket.emit("loginSuccess", result.user);
-      socket.emit("functionalities", result.functionalities);
-      socket.on("executeFunctionality", (index: number, functionalities: string[]) => {
-        const { role } = result;
-        if (index >= 0 && index < functionalities.length) {
-          console.log(`Executing functionality: ${functionalities[index]}`);
+      socket.emit("functionalities", result.functionalities, result.role);
+      socket.on(
+        "executeFunctionality",
+        (index: number, functionalities: string[]) => {
+          const { role } = result;
+          if (index >= 0 && index < functionalities.length) {
+            console.log(`Executing functionality: ${functionalities[index]}`);
 
-         switch (role) {
-           case "Admin":
-             adminService.executeAdminFunctionality(index);
-             break;
-           case "Chef":
-             chefService.executeChefFunctionality(index);
-             break;
-           case "Employee":
-             employeeService.executeEmployeeFunctionality(index);
-             break;
-           default:
-             socket.emit("error", "Unknown user role");
-         }
-        } else {
-          socket.emit("error", "Invalid functionality index");
+            switch (role) {
+              case "Admin":
+                adminService.executeAdminFunctionality(index);
+                break;
+              case "Chef":
+                chefService.executeChefFunctionality(index);
+                break;
+              case "Employee":
+                employeeService.executeEmployeeFunctionality(index);
+                break;
+              default:
+                socket.emit("error", "Unknown user role");
+            }
+          } else {
+            socket.emit("error", "Invalid functionality index");
+          }
         }
-      });
+      );
     }
+    // socket.on("addMenuItem", async (menuItem) => {
+    //   if (result.role === "Admin") {
+    //     try {
+    //       await adminService.addMenuItem(menuItem);
+    //       socket.emit("actionSuccess", "Menu item added successfully.");
+    //     } catch (error) {
+    //       socket.emit("actionFailure", "Failed to add menu item.");
+    //     }
+    //   } else {
+    //     socket.emit("error", "Unauthorized action");
+    //   }
+    // });
   });
-
-//   socket.on(
-//     "executeFunctionality",
-//     (index: number, functionalities: string[]) => {
-//       if (index >= 0 && index < functionalities.length) {
-//         console.log(`Executing functionality: ${functionalities[index]}`);
-//         // Add function execution logic here
-//       } else {
-//         socket.emit("error", "Invalid functionality index");
-//       }
-//     }
-//   );
 
   socket.on("disconnect", () => {
     console.log("User disconnected");
