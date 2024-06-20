@@ -2,17 +2,18 @@ import express from "express";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { AuthController } from "./controllers/authController";
-import { AdminService } from "./services/adminService";
-import { ChefService } from "./services/chefService";
-import { EmployeeService } from "./services/employeeService";
+import { AdminController } from "./controllers/adminController";
+import { ChefController } from "./controllers/chefController";
+import { EmployeeController } from "./controllers/employeeController";
+import { MenuItem } from "./interface/menuItem";
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
 const authController = new AuthController();
-const adminService = new AdminService();
-const chefService = new ChefService();
-const employeeService = new EmployeeService();
+const adminController = new AdminController();
+const chefController = new ChefController();
+const employeeController = new EmployeeController();
 
 io.on("connection", (socket: Socket) => {
   console.log("User connected");
@@ -27,42 +28,46 @@ io.on("connection", (socket: Socket) => {
       socket.emit("functionalities", result.functionalities, result.role);
       socket.on(
         "executeFunctionality",
-        (index: number, functionalities: string[]) => {
+        async (
+          index: number,
+          functionalities: string[],
+          payload:
+            | MenuItem
+            | {
+                name: string;
+                updates: {
+                  field: string;
+                  value: string | number;
+                }[];
+              } | {name:string}
+        ) => {
           const { role } = result;
           if (index >= 0 && index < functionalities.length) {
             console.log(`Executing functionality: ${functionalities[index]}`);
-
+            let response;
             switch (role) {
               case "Admin":
-                adminService.executeAdminFunctionality(index);
+                response = await adminController.executeAdminFunctionality(
+                  index,
+                  payload
+                );
                 break;
               case "Chef":
-                chefService.executeChefFunctionality(index);
+                chefController.executeChefFunctionality(index);
                 break;
               case "Employee":
-                employeeService.executeEmployeeFunctionality(index);
+                employeeController.executeEmployeeFunctionality(index);
                 break;
               default:
                 socket.emit("error", "Unknown user role");
             }
+            socket.emit("result", response);
           } else {
             socket.emit("error", "Invalid functionality index");
           }
         }
       );
     }
-    // socket.on("addMenuItem", async (menuItem) => {
-    //   if (result.role === "Admin") {
-    //     try {
-    //       await adminService.addMenuItem(menuItem);
-    //       socket.emit("actionSuccess", "Menu item added successfully.");
-    //     } catch (error) {
-    //       socket.emit("actionFailure", "Failed to add menu item.");
-    //     }
-    //   } else {
-    //     socket.emit("error", "Unauthorized action");
-    //   }
-    // });
   });
 
   socket.on("disconnect", () => {

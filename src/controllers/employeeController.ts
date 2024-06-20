@@ -1,4 +1,4 @@
-export class EmployeeService {
+export class EmployeeController {
   viewNotifications() {
     console.log("View notifications functionality executed");
     // Implement view notifications functionality here

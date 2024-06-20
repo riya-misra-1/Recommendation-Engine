@@ -1,4 +1,4 @@
-export class ChefService {
+export class ChefController {
   viewMenuRollout() {
     console.log("View menu rollout functionality executed");
     // Implement view menu rollout functionality here
