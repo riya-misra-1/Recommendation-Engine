@@ -2,6 +2,7 @@ import { io, Socket } from "socket.io-client";
 import { AdminClient } from "../src/client/adminClientUI";
 import { User } from "./interface/user";
 import { getInputFromClient } from "../src/utils/promptMessage";
+import { MenuItem } from "./interface/menuItem";
 
 const socket: Socket = io("http://localhost:3000");
 const adminClient = new AdminClient();
@@ -31,7 +32,6 @@ socket.on(
       switch (role) {
         case "Admin":
           foodItem = await adminClient.handleAdminFunctionalities(index);
-          console.log('FoodItemm is received',foodItem);
           break;
         // Add cases for Chef and Employee
         default:
@@ -39,7 +39,7 @@ socket.on(
           return;
       }
 
-        socket.emit("executeFunctionality", index, functionalities, foodItem);
+      socket.emit("executeFunctionality", index, functionalities, foodItem);
     } else {
       console.log("Invalid input. Please enter a valid functionality number.");
     }
@@ -56,6 +56,10 @@ socket.on("loginFailure", (message: string) => {
 
 socket.on("error", (message: string) => {
   console.error("Error:", message);
+});
+
+socket.on("result",(message: string|MenuItem)=>{
+  console.log(message);
 });
 
 socket.on("disconnect", () => {
