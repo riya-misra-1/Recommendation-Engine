@@ -1,15 +1,16 @@
-import { Pool } from "mysql2/promise";
-import pool from "../db-connection";
 import { MenuItem } from "../interface/menuItem";
+import { ItemRepository } from "../repository/itemRepository";
 
 export class ItemService {
+  private itemRepository: ItemRepository;
+
+  constructor() {
+    this.itemRepository = new ItemRepository();
+  }
+
   async addItem(menuItem: MenuItem): Promise<string> {
-    const { category, name, price, availability } = menuItem;
     try {
-      await pool.execute(
-        "INSERT INTO Food_Item(category, name, price, availability_status) VALUES (?, ?, ?, ?)",
-        [category, name, price, availability]
-      );
+      await this.itemRepository.addItem(menuItem);
       return "Menu item added successfully";
     } catch (error) {
       console.error("Error adding menu item:", error);
@@ -19,18 +20,14 @@ export class ItemService {
 
   async viewMenu(): Promise<{ menu?: MenuItem[]; error?: string }> {
     try {
-      const [rows] = await pool.execute(
-        "SELECT name, price, availability_status FROM Food_Item"
-      );
-      const menu = rows as MenuItem[];
-
+      const menu = await this.itemRepository.getMenuItems();
       if (menu.length > 0) {
         return { menu };
       } else {
-        return { error: "Invalid email or password" };
+        return { error: "No menu items found" };
       }
     } catch (error) {
-      console.error("Error during login:", error);
+      console.error("Error fetching menu:", error);
       return { error: "Database error" };
     }
   }
@@ -41,17 +38,7 @@ export class ItemService {
     value: string | number
   ): Promise<string> {
     try {
-      if (field === "price") {
-        await pool.execute("UPDATE Food_Item SET price = ? WHERE name = ?", [
-          value,
-          name,
-        ]);
-      } else if (field === "availability_status") {
-        await pool.execute(
-          "UPDATE Food_Item SET availability_status = ? WHERE name = ?",
-          [value, name]
-        );
-      }
+      await this.itemRepository.updateItem(name, field, value);
       return `${field} updated successfully for item ${name}`;
     } catch (error) {
       console.error("Error updating menu item:", error);
@@ -61,10 +48,19 @@ export class ItemService {
 
   async deleteItem(name: string): Promise<string> {
     try {
-      await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
+      await this.itemRepository.deleteItem(name);
       return "Menu item deleted successfully";
     } catch (error) {
       console.error("Error deleting menu item:", error);
+      throw error;
+    }
+  }
+
+  async showMenu(): Promise<MenuItem[]> {
+    try {
+      return await this.itemRepository.getMenuItems();
+    } catch (error) {
+      console.error("Error fetching menu items by category:", error);
       throw error;
     }
   }
