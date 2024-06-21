@@ -31,15 +31,7 @@ io.on("connection", (socket: Socket) => {
         async (
           index: number,
           functionalities: string[],
-          payload:
-            | MenuItem
-            | {
-                name: string;
-                updates: {
-                  field: string;
-                  value: string | number;
-                }[];
-              } | {name:string}
+          payload: any
         ) => {
           const { role } = result;
           if (index >= 0 && index < functionalities.length) {
@@ -53,7 +45,10 @@ io.on("connection", (socket: Socket) => {
                 );
                 break;
               case "Chef":
-                chefController.executeChefFunctionality(index);
+                   response = await chefController.executeChefFunctionality(
+                     index
+                   );
+                  console.log('Response',response);
                 break;
               case "Employee":
                 employeeController.executeEmployeeFunctionality(index);
@@ -61,7 +56,8 @@ io.on("connection", (socket: Socket) => {
               default:
                 socket.emit("error", "Unknown user role");
             }
-            socket.emit("result", response);
+            // socket.emit("result", response);
+            socket.emit("result", { role: role, data: response });
           } else {
             socket.emit("error", "Invalid functionality index");
           }
@@ -70,9 +66,12 @@ io.on("connection", (socket: Socket) => {
     }
   });
 
+  
+
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
+  
 });
 
 const PORT = 3000;
