@@ -1,6 +1,7 @@
 import { Pool, RowDataPacket } from "mysql2/promise";
 import pool from "../db-connection";
 import { MenuItem } from "../interface/menuItem";
+import { MealType, RolloutItem } from "../interface/mealType";
 
 export class ItemRepository {
   async addItem(menuItem: MenuItem): Promise<void> {
@@ -19,10 +20,11 @@ export class ItemRepository {
   async getMenuItems(): Promise<MenuItem[]> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(
-        "SELECT name, price, availability_status FROM Food_Item"
+        "SELECT id,name, price, availability_status FROM Food_Item"
       );
 
       const menuItems: any = rows.map((row) => ({
+        id: row.id,
         name: row.name,
         price: parseFloat(row.price),
         availability: row.availability_status === 1,
@@ -66,6 +68,27 @@ export class ItemRepository {
       throw error;
     }
   }
-
   
+ async saveMenuRollout(itemsToRollout: RolloutItem[]): Promise<void> {
+    const mealTypeMap: Record<MealType, number> = {
+      breakfast: 1,
+      lunch: 2,
+      dinner: 3,
+    };
+
+    try {
+      const queries = itemsToRollout.map(({ itemId, mealType }) => {
+        const mealTypeId = mealTypeMap[mealType];
+        return pool.execute(
+          "INSERT INTO RollOut_Menu (food_item, meal_type) VALUES (?, ?)",
+          [itemId, mealTypeId]
+        );
+      });
+
+      await Promise.all(queries);
+    } catch (error) {
+      console.error("Error saving rolled out menu items:", error);
+      throw error;
+    }
+  }
 }

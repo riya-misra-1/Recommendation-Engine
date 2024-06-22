@@ -1,3 +1,4 @@
+import { RolloutItem } from "../interface/mealType";
 import { MenuItem } from "../interface/menuItem";
 import { ItemRepository } from "../repository/itemRepository";
 
@@ -61,6 +62,14 @@ export class ItemService {
       return await this.itemRepository.getMenuItems();
     } catch (error) {
       console.error("Error fetching menu items by category:", error);
+      throw error;
+    }
+  }
+  async rolloutMenuItems(itemsToRollout: RolloutItem[]): Promise<void> {
+    try {
+      await this.itemRepository.saveMenuRollout(itemsToRollout);
+    } catch (error) {
+      console.error("Error rolling out menu items:", error);
       throw error;
     }
   }

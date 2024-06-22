@@ -46,7 +46,8 @@ io.on("connection", (socket: Socket) => {
                 break;
               case "Chef":
                    response = await chefController.executeChefFunctionality(
-                     index
+                     index,
+                     payload
                    );
                   console.log('Response',response);
                 break;
@@ -63,6 +64,9 @@ io.on("connection", (socket: Socket) => {
           }
         }
       );
+      socket.on("fetchFunctionalities", (role: string) => {
+        socket.emit("functionalities", result.functionalities, role);
+      });
     }
   });
 

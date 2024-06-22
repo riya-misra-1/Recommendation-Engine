@@ -15,41 +15,48 @@ async function inputUserCredentials() {
   socket.emit("login", email, password);
 }
 
+async function executeFunctionality(
+  functionalities: string[],
+  role: string
+) {
+  console.log("Available functionalities:");
+  functionalities.forEach((func, index) => {
+    console.log(`${index + 1}. ${func}`);
+  });
+
+  const input = await getInputFromClient(
+    "Enter the functionality number to execute: "
+  );
+  const index = parseInt(input) - 1;
+
+  if (index >= 0 && index < functionalities.length) {
+    let payload;
+
+    switch (role) {
+      case "Admin":
+        payload = await adminClient.handleAdminFunctionalities(index);
+        break;
+      case "Chef":
+        payload = await chefClient.handleChefFunctionalities(index);
+        break;
+      default:
+        console.error("Unknown role");
+        return;
+    }
+
+    socket.emit("executeFunctionality", index, functionalities, payload);
+  } else {
+    console.log("Invalid input. Please enter a valid functionality number.");
+    await executeFunctionality(functionalities, role); 
+  }
+}
+
 socket.on(
   "functionalities",
   async (functionalities: string[], role: string) => {
-    console.log("Available functionalities:");
-    functionalities.forEach((func, index) => {
-      console.log(`${index + 1}. ${func}`);
-    });
-
-    const input = await getInputFromClient(
-      "Enter the functionality number to execute: "
-    );
-    const index = parseInt(input) - 1;
-
-    if (index >= 0 && index < functionalities.length) {
-      let payload;
-
-      switch (role) {
-        case "Admin":
-          payload = await adminClient.handleAdminFunctionalities(index);
-          break;
-        case "Chef":
-          payload = await chefClient.handleChefFunctionalities(index);
-          break;
-        default:
-          console.error("Unknown role");
-          return;
-      }
-
-      socket.emit("executeFunctionality", index, functionalities, payload);
-    } else {
-      console.log("Invalid input. Please enter a valid functionality number.");
-    }
+    await executeFunctionality(functionalities, role);
   }
 );
-
 socket.on("loginSuccess", (user: User) => {
   console.log("Login successful.");
 });
@@ -65,17 +72,17 @@ socket.on("error", (message: string) => {
 socket.on("result",async(message)=>{
   // console.log(message);
   const { role, data } = message;
-  // console.log("Result:", data);
-
-  if (role === "Admin") {
-      console.log("Result:", data);
-  } else if (role === "Chef") {
-    if (Array.isArray(data)) {
-      // handleMenuItems(data);
-    } else {
-      console.log("Chef Result:", data);
-    }
-  }
+  console.log("Result:", data);
+ socket.emit("fetchFunctionalities", role);
+  // if (role === "Admin") {
+  //     console.log("Result:", data);
+  // } else if (role === "Chef") {
+  //   if (Array.isArray(data)) {
+  //     handleMenuItems(data);
+  //   } else {
+  //     console.log("Chef Result:", data);
+  //   }
+  // }
   
   // async function handleMenuItems(menuItems: MenuItem[]) {
   //   console.log("Menu Items:", menuItems);

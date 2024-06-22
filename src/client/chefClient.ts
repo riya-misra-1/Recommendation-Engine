@@ -1,11 +1,18 @@
 import { getInputFromClient } from "../utils/promptMessage";
 import { MenuItem } from "../interface/menuItem";
-import { MealTypes } from "../interface/mealType";
+import { MealType, RolloutItem } from "../interface/mealType";
 
 export class ChefClient {
+  private selectedItems: { [mealType: string]: number[] } = {
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+  };
+  
   async handleChefFunctionalities(index: number): Promise<any> {
     const chefFunctions = [
-      this.viewMenuRollout,
+      this.viewMenu,
+      this.rolloutItems,
       this.recommendation,
       this.viewFeedbackReport,
     ];
@@ -18,8 +25,30 @@ export class ChefClient {
     }
   }
 
-  async viewMenuRollout() {
+  async viewMenu() {
     return;
+  }
+
+  async rolloutItems(): Promise<RolloutItem[]> {
+    const mealTypes: MealType[] = ["breakfast", "lunch", "dinner"];
+    const itemsToRollout: RolloutItem[] = [];
+
+    for (const mealType of mealTypes) {
+      const count = parseInt(
+        await getInputFromClient(`How many items for ${mealType}? `),
+        10
+      );
+
+      for (let i = 0; i < count; i++) {
+        const itemId = parseInt(
+          await getInputFromClient(`Enter ID for ${mealType} item ${i + 1}: `),
+          10
+        );
+        itemsToRollout.push({ itemId, mealType });
+      }
+    }
+
+    return itemsToRollout;
   }
 
   async recommendation(): Promise<void> {
