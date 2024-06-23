@@ -1,24 +1,35 @@
+import { Socket } from "socket.io-client";
+import { ItemRepository } from "../repository/itemRepository";
+import { NotificationService } from "../services/notificationService";
+
+const notificationService = new NotificationService();
 export class EmployeeController {
-  viewNotifications() {
-    console.log("View notifications functionality executed");
-    // Implement view notifications functionality here
+  async viewNotifications(): Promise<string[]> {
+    try {
+      const notifications =
+        await notificationService.getNotificationsForToday();
+      return notifications;
+    } catch (error) {
+      console.error(
+        "Error fetching notifications in EmployeeController:",
+        error
+      );
+      throw error;
+    }
   }
 
   voteForFood() {
     console.log("Vote for food functionality executed");
-    // Implement vote for food functionality here
   }
 
   viewRatingsAndComments() {
     console.log("View ratings and comments functionality executed");
-    // Implement view ratings and comments functionality here
   }
 
   executeEmployeeFunctionality(index: number) {
     switch (index) {
       case 0:
-        this.viewNotifications();
-        break;
+        return this.viewNotifications();
       case 1:
         this.voteForFood();
         break;

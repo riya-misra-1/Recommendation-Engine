@@ -3,12 +3,6 @@ import { MenuItem } from "../interface/menuItem";
 import { MealType, RolloutItem } from "../interface/mealType";
 
 export class ChefClient {
-  private selectedItems: { [mealType: string]: number[] } = {
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-  };
-  
   async handleChefFunctionalities(index: number): Promise<any> {
     const chefFunctions = [
       this.viewMenu,
@@ -44,7 +38,19 @@ export class ChefClient {
           await getInputFromClient(`Enter ID for ${mealType} item ${i + 1}: `),
           10
         );
-        itemsToRollout.push({ itemId, mealType });
+
+        const existingItem = itemsToRollout.find(
+          (item) => item.itemId === itemId
+        );
+        if (existingItem) {
+          console.error(
+            `Item with ID ${itemId} is already added for ${existingItem.mealType}.`
+          );
+          i--; 
+          continue;
+        }
+
+        itemsToRollout.push({ itemId, mealType});
       }
     }
 
