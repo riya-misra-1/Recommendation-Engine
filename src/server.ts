@@ -13,9 +13,10 @@ const io = new Server(server);
 const authController = new AuthController();
 const adminController = new AdminController();
 const chefController = new ChefController();
-const employeeController = new EmployeeController();
 
 io.on("connection", (socket: Socket) => {
+const employeeController = new EmployeeController();
+
   console.log("User connected");
 
   socket.on("login", async (email: string, password: string) => {
@@ -49,10 +50,9 @@ io.on("connection", (socket: Socket) => {
                      index,
                      payload
                    );
-                  console.log('Response',response);
                 break;
               case "Employee":
-                employeeController.executeEmployeeFunctionality(index);
+                response = await employeeController.executeEmployeeFunctionality(index);
                 break;
               default:
                 socket.emit("error", "Unknown user role");

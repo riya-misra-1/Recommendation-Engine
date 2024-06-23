@@ -27,6 +27,7 @@ export class ChefController {
     }
   }
 
+  
   recommendation() {
     console.log("Recommendation functionality executed");
   }

@@ -2,6 +2,7 @@ import { Pool, RowDataPacket } from "mysql2/promise";
 import pool from "../db-connection";
 import { MenuItem } from "../interface/menuItem";
 import { MealType, RolloutItem } from "../interface/mealType";
+import { RolledOutItem } from "../interface/rolledOutItem";
 
 export class ItemRepository {
   async addItem(menuItem: MenuItem): Promise<void> {
@@ -62,14 +63,19 @@ export class ItemRepository {
 
   async deleteItem(name: string): Promise<void> {
     try {
+      await pool.execute(
+        "DELETE FROM RollOut_Menu WHERE food_item = (SELECT id FROM Food_Item WHERE name = ?)",
+        [name]
+      );
+
       await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
     } catch (error) {
       console.error("Error deleting menu item:", error);
       throw error;
     }
   }
-  
- async saveMenuRollout(itemsToRollout: RolloutItem[]): Promise<void> {
+
+  async saveMenuRollout(itemsToRollout: RolloutItem[]): Promise<void> {
     const mealTypeMap: Record<MealType, number> = {
       breakfast: 1,
       lunch: 2,
@@ -77,17 +83,49 @@ export class ItemRepository {
     };
 
     try {
-      const queries = itemsToRollout.map(({ itemId, mealType }) => {
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const notificationMessage = `Tomorrow's menu is rolled out by chef.`;
+      await pool.execute(
+        "INSERT INTO Notification (notification,date) VALUES (?, ?)",
+        [notificationMessage, currentDate]
+      );
+      const queries = itemsToRollout.map(async ({ itemId, mealType }) => {
         const mealTypeId = mealTypeMap[mealType];
+
         return pool.execute(
-          "INSERT INTO RollOut_Menu (food_item, meal_type) VALUES (?, ?)",
-          [itemId, mealTypeId]
+          "INSERT INTO RollOut_Menu (food_item, meal_type, date) VALUES (?, ?, ?)",
+          [itemId, mealTypeId, currentDate]
         );
       });
 
       await Promise.all(queries);
     } catch (error) {
       console.error("Error saving rolled out menu items:", error);
+      throw error;
+    }
+  }
+  async getRolledOutItemsForToday(): Promise<RolledOutItem[]> {
+    try {
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT rm.id, fi.name AS item_name, fi.price, mt.type AS meal_type
+        FROM RollOut_Menu rm
+        INNER JOIN Food_Item fi ON rm.food_item = fi.id
+        INNER JOIN Meal_Type mt ON rm.meal_type = mt.id
+        WHERE DATE(rm.date) = ?`,
+        [currentDate]
+      );
+
+      const rolledOutItems: RolledOutItem[] = rows.map((row) => ({
+        id: row.id,
+        itemName: row.item_name,
+        price: row.price,
+        mealType: row.meal_type,
+      }));
+
+      return rolledOutItems;
+    } catch (error) {
+      console.error("Error fetching rolled out items:", error);
       throw error;
     }
   }

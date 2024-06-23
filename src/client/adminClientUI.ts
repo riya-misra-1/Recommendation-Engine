@@ -42,7 +42,10 @@ export class AdminClient {
     );
     const availability = status === "true";
 
-    const foodItem: MenuItem = { category, name, price, availability };
+    const foodItem: MenuItem = {
+      category, name, price, availability,
+      id: 0
+    };
     console.log("Item details:", foodItem);
     return foodItem;
   }

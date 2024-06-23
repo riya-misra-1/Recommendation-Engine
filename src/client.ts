@@ -2,12 +2,13 @@ import { io, Socket } from "socket.io-client";
 import { AdminClient } from "../src/client/adminClientUI";
 import { User } from "./interface/user";
 import { getInputFromClient } from "../src/utils/promptMessage";
-import { MenuItem } from "./interface/menuItem";
 import { ChefClient } from "./client/chefClient";
+import { EmployeeClient } from "./client/employeeClient";
 
 const socket: Socket = io("http://localhost:3000");
 const adminClient = new AdminClient();
 const chefClient = new ChefClient();
+const employeeClient = new EmployeeClient(socket);
 
 async function inputUserCredentials() {
   const email = await getInputFromClient("Enter your email: ");
@@ -38,6 +39,9 @@ async function executeFunctionality(
         break;
       case "Chef":
         payload = await chefClient.handleChefFunctionalities(index);
+        break;
+      case "Employee":
+        payload = await employeeClient.handleEmployeeFunctionalities(index, socket);
         break;
       default:
         console.error("Unknown role");
@@ -70,60 +74,28 @@ socket.on("error", (message: string) => {
 });
 
 socket.on("result",async(message)=>{
-  // console.log(message);
   const { role, data } = message;
-  console.log("Result:", data);
+  // console.log("Result:", data);
+  switch (role) {
+    case "Employee":
+      if (Array.isArray(data) && data.length > 0) {
+        data.forEach((notification, index) => {
+          console.log(`${index + 1}. ${notification}`);
+        });
+      } else {
+        console.error("Invalid data format received for Employee role");
+      }
+      break;
+    case "Admin":
+      console.log("Result:", data);
+      break;
+    case "Chef":
+      console.log("Result:", data);
+      break;
+    default:
+      console.error("Unknown role received from server");
+  }
  socket.emit("fetchFunctionalities", role);
-  // if (role === "Admin") {
-  //     console.log("Result:", data);
-  // } else if (role === "Chef") {
-  //   if (Array.isArray(data)) {
-  //     handleMenuItems(data);
-  //   } else {
-  //     console.log("Chef Result:", data);
-  //   }
-  // }
-  
-  // async function handleMenuItems(menuItems: MenuItem[]) {
-  //   console.log("Menu Items:", menuItems);
-
-  //   const breakfastCount = parseInt(
-  //     await getInputFromClient(
-  //       "How many food items do you need for breakfast? "
-  //     )
-  //   );
-  //   const breakfastItems = await getInputFromClientForItems(
-  //     breakfastCount,
-  //     "breakfast"
-  //   );
-
-  //   socket.emit("breakfastItems", breakfastItems);
-
-  //   const lunchCount = parseInt(
-  //     await getInputFromClient("How many food items do you need for lunch? ")
-  //   );
-  //   const lunchItems = await getInputFromClientForItems(lunchCount, "lunch");
-
-  //   socket.emit("lunchItems", lunchItems);
-
-  //   const dinnerCount = parseInt(
-  //     await getInputFromClient("How many food items do you need for dinner? ")
-  //   );
-  //   const dinnerItems = await getInputFromClientForItems(dinnerCount, "dinner");
-
-  //   socket.emit("dinnerItems", dinnerItems);
-  // }
-  
-  //  async function getInputFromClientForItems(count: number, mealType: string) {
-  //    const items = [];
-  //    for (let i = 0; i < count; i++) {
-  //      const itemName = await getInputFromClient(
-  //        `Enter name for ${mealType} item ${i + 1}: `
-  //      );
-  //      items.push({ name: itemName, type: mealType });
-  //    }
-  //    return items;
-  //  }
 });
 
 socket.on("disconnect", () => {
