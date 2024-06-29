@@ -16,7 +16,7 @@ export class ChefController {
       throw error;
     }
   }
-  
+
   async rolloutItems(itemsToRollout: RolloutItem[]): Promise<string> {
     try {
       await itemService.rolloutMenuItems(itemsToRollout);
@@ -27,13 +27,27 @@ export class ChefController {
     }
   }
 
-  
-  recommendation() {
-    console.log("Recommendation functionality executed");
+  async viewUserRecommendedItems(): Promise<MenuItem[]> {
+    try {
+      return await itemService.getUserRecommendedItems();
+    } catch (error) {
+      console.error("Error fetching user recommended items:", error);
+      throw error;
+    }
   }
 
-  viewFeedbackReport() {
-    console.log("View feedback report functionality executed");
+  async finalizeMenu(
+    breakfast: number,
+    lunch: number,
+    dinner: number
+  ): Promise<string> {
+    try {
+      await itemService.finalizeMenu(breakfast, lunch, dinner);
+      return "Menu finalized successfully";
+    } catch (error) {
+      console.error("Error finalizing menu:", error);
+      throw error;
+    }
   }
 
   executeChefFunctionality(index: number, payload: any) {
@@ -43,11 +57,9 @@ export class ChefController {
       case 1:
         return this.rolloutItems(payload);
       case 2:
-        this.recommendation();
-        break;
+        return this.viewUserRecommendedItems();
       case 3:
-        this.viewFeedbackReport();
-        break;
+        return this.finalizeMenu(payload.breakfast, payload.lunch, payload.dinner);
       default:
         console.error("Invalid chef functionality index");
         return Promise.reject("Invalid chef functionality index");
