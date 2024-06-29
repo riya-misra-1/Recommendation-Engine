@@ -21,7 +21,7 @@ export class EmployeeClient {
   async handleEmployeeFunctionalities(
     index: number,
     socket: Socket
-  ): Promise<void> {
+  ): Promise<Votes | void> {
     const employeeFunctions = [this.viewNotifications, this.voteForFood];
 
     const selectedFunction = employeeFunctions[index];
@@ -37,29 +37,73 @@ export class EmployeeClient {
     return;
   }
 
-  async voteForFood(): Promise<void> {
+  async promptForItemSelection(
+    items: RolledOutItem[],
+    mealType: string
+  ): Promise<number> {
+    let valid = false;
+    let itemId: number = 0;
+
+    while (!valid) {
+      const input = await getInputFromClient(`Enter ID for ${mealType} item: `);
+      itemId = Number(input);
+      if (items.some((item) => item.id === itemId)) {
+        valid = true;
+      } else {
+        console.log(
+          `Invalid selection. Please select a valid ${mealType.toLowerCase()} item.`
+        );
+      }
+    }
+
+    return itemId;
+  }
+
+  async promptForBreakfast(breakfastItems: RolledOutItem[]): Promise<number> {
+    return this.promptForItemSelection(breakfastItems, "Breakfast");
+  }
+
+  async promptForLunch(lunchItems: RolledOutItem[]): Promise<number> {
+    return this.promptForItemSelection(lunchItems, "Lunch");
+  }
+
+  async promptForDinner(dinnerItems: RolledOutItem[]): Promise<number> {
+    return this.promptForItemSelection(dinnerItems, "Dinner");
+  }
+
+  promptForVotes = async (rolledOutItems: RolledOutItem[]): Promise<Votes> => {
+    const breakfastItems = rolledOutItems.filter(
+      (item) => item.mealType === "Breakfast"
+    );
+    const lunchItems = rolledOutItems.filter(
+      (item) => item.mealType === "Lunch"
+    );
+    const dinnerItems = rolledOutItems.filter(
+      (item) => item.mealType === "Dinner"
+    );
+
+    const breakfastId = await this.promptForBreakfast(breakfastItems);
+    const lunchId = await this.promptForLunch(lunchItems);
+    const dinnerId = await this.promptForDinner(dinnerItems);
+
+    return {
+      breakfast: breakfastId,
+      lunch: lunchId,
+      dinner: dinnerId,
+    };
+  };
+
+  voteForFood = async (): Promise<Votes> => {
     try {
       const rolledOutItems = await itemRepository.getRolledOutItemsForToday();
       console.table(rolledOutItems);
 
-      //  const votes: Votes = await this.promptForVotes();
-      //  console.log("Votes:", votes);
-
+      const votes = await this.promptForVotes(rolledOutItems);
+      console.log("Votes:", votes);
+      return votes;
     } catch (error) {
       console.error("Error in voteForFood:", error);
       throw error;
     }
-  }
-
-  // async promptForVotes(): Promise<Votes> {
-  //   const breakfast = await getInputFromClient("Enter ID for breakfast item: ");
-  //   const lunch = await getInputFromClient("Enter ID for lunch item: ");
-  //   const dinner = await getInputFromClient("Enter ID for dinner item: ");
-
-  //   return {
-  //     breakfast: Number(breakfast),
-  //     lunch: Number(lunch),
-  //     dinner: Number(dinner),
-  //   };
-  // }
+  };
 }

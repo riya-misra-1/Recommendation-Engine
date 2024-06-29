@@ -6,6 +6,8 @@ import { AdminController } from "./controllers/adminController";
 import { ChefController } from "./controllers/chefController";
 import { EmployeeController } from "./controllers/employeeController";
 import { MenuItem } from "./interface/menuItem";
+import { Votes } from "./interface/votes";
+import { ItemService } from "./services/itemService";
 
 const app = express();
 const server = createServer(app);
@@ -13,9 +15,9 @@ const io = new Server(server);
 const authController = new AuthController();
 const adminController = new AdminController();
 const chefController = new ChefController();
-
+const itemService = new ItemService();  
 io.on("connection", (socket: Socket) => {
-const employeeController = new EmployeeController();
+  const employeeController = new EmployeeController();
 
   console.log("User connected");
 
@@ -29,11 +31,7 @@ const employeeController = new EmployeeController();
       socket.emit("functionalities", result.functionalities, result.role);
       socket.on(
         "executeFunctionality",
-        async (
-          index: number,
-          functionalities: string[],
-          payload: any
-        ) => {
+        async (index: number, functionalities: string[], payload: any) => {
           const { role } = result;
           if (index >= 0 && index < functionalities.length) {
             console.log(`Executing functionality: ${functionalities[index]}`);
@@ -46,13 +44,19 @@ const employeeController = new EmployeeController();
                 );
                 break;
               case "Chef":
-                   response = await chefController.executeChefFunctionality(
-                     index,
-                     payload
-                   );
+                response = await chefController.executeChefFunctionality(
+                  index,
+                  payload
+                );
                 break;
               case "Employee":
-                response = await employeeController.executeEmployeeFunctionality(index);
+                  const userId = result.user?.id;
+                  response =
+                    await employeeController.executeEmployeeFunctionality(
+                      index,
+                      result.user?.id as number,
+                      payload 
+                    );
                 break;
               default:
                 socket.emit("error", "Unknown user role");
@@ -67,15 +71,13 @@ const employeeController = new EmployeeController();
       socket.on("fetchFunctionalities", (role: string) => {
         socket.emit("functionalities", result.functionalities, role);
       });
+      
     }
   });
-
-  
 
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
-  
 });
 
 const PORT = 3000;

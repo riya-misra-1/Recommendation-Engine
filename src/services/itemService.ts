@@ -1,5 +1,6 @@
 import { RolloutItem } from "../interface/mealType";
 import { MenuItem } from "../interface/menuItem";
+import { Votes } from "../interface/votes";
 import { ItemRepository } from "../repository/itemRepository";
 
 export class ItemService {
@@ -70,6 +71,24 @@ export class ItemService {
       await this.itemRepository.saveMenuRollout(itemsToRollout);
     } catch (error) {
       console.error("Error rolling out menu items:", error);
+      throw error;
+    }
+  }
+  
+  async saveVotes(userId: number, votes: Votes): Promise<string> {
+    try {
+      const existingVotes = await this.itemRepository.getUserVotes(userId);
+
+      for (const itemId of Object.values(votes)) {
+        if (existingVotes.some((vote) => vote.itemId === itemId)) {
+          return "User already voted for today.";
+        }
+      }
+
+      await this.itemRepository.saveVotes(userId, votes);
+      return "Votes saved successfully.";
+    } catch (error) {
+      console.error("Error saving votes:", error);
       throw error;
     }
   }
