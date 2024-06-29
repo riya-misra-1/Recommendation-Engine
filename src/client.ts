@@ -42,6 +42,7 @@ async function executeFunctionality(
         break;
       case "Employee":
         payload = await employeeClient.handleEmployeeFunctionalities(index, socket);
+        console.log('Payload:', payload);
         break;
       default:
         console.error("Unknown role");
@@ -78,12 +79,12 @@ socket.on("result",async(message)=>{
   // console.log("Result:", data);
   switch (role) {
     case "Employee":
-      if (Array.isArray(data) && data.length > 0) {
+     if (Array.isArray(data) && data.length > 0) {
         data.forEach((notification, index) => {
           console.log(`${index + 1}. ${notification}`);
         });
       } else {
-        console.error("Invalid data format received for Employee role");
+        console.log("Result:", data);
       }
       break;
     case "Admin":

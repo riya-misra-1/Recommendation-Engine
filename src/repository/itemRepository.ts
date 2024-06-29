@@ -3,6 +3,7 @@ import pool from "../db-connection";
 import { MenuItem } from "../interface/menuItem";
 import { MealType, RolloutItem } from "../interface/mealType";
 import { RolledOutItem } from "../interface/rolledOutItem";
+import { Votes } from "../interface/votes";
 
 export class ItemRepository {
   async addItem(menuItem: MenuItem): Promise<void> {
@@ -108,7 +109,7 @@ export class ItemRepository {
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
       const [rows] = await pool.execute<RowDataPacket[]>(
-        `SELECT rm.id, fi.name AS item_name, fi.price, mt.type AS meal_type
+        `SELECT fi.id AS food_item_id, fi.name AS item_name, fi.price, mt.type AS meal_type
         FROM RollOut_Menu rm
         INNER JOIN Food_Item fi ON rm.food_item = fi.id
         INNER JOIN Meal_Type mt ON rm.meal_type = mt.id
@@ -117,7 +118,7 @@ export class ItemRepository {
       );
 
       const rolledOutItems: RolledOutItem[] = rows.map((row) => ({
-        id: row.id,
+        id: row.food_item_id,
         itemName: row.item_name,
         price: row.price,
         mealType: row.meal_type,
@@ -126,6 +127,58 @@ export class ItemRepository {
       return rolledOutItems;
     } catch (error) {
       console.error("Error fetching rolled out items:", error);
+      throw error;
+    }
+  }
+
+  async saveVotes(userId: number, votes: Votes): Promise<void> {
+    try {
+      const voteQueries = Object.entries(votes).map(([mealType, itemId]) => {
+        const voteQuery = `
+          INSERT INTO Vote (userId, itemId)
+          VALUES (?, ?)
+          ON DUPLICATE KEY UPDATE
+            itemId = VALUES(itemId)`;
+        return pool.execute(voteQuery, [userId, itemId]);
+      });
+
+      await Promise.all(voteQueries);
+
+      const currentDate = new Date().toISOString().slice(0, 10);
+
+      const incrementQueries = Object.entries(votes).map(
+        ([mealType, itemId]) => {
+          const incrementQuery = `
+           UPDATE RollOut_Menu
+            SET votes = COALESCE(votes, 0) + 1
+            WHERE food_item = ?
+             AND DATE(date) = ?`;
+
+          return pool.execute(incrementQuery, [itemId, currentDate]);
+        }
+      );
+
+      await Promise.all(incrementQueries);
+    } catch (error) {
+      console.error("Error saving votes and incrementing vote counts:", error);
+      throw error;
+    }
+  }
+
+  async getUserVotes(userId: number): Promise<{ itemId: number }[]> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        "SELECT itemId FROM Vote WHERE userId = ?",
+        [userId]
+      );
+
+      const userVotes = rows.map((row) => ({
+        itemId: row.itemId,
+      }));
+
+      return userVotes;
+    } catch (error) {
+      console.error("Error fetching user votes:", error);
       throw error;
     }
   }
