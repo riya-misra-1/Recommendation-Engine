@@ -182,4 +182,54 @@ export class ItemRepository {
       throw error;
     }
   }
+
+  async getUserRecommendedItems(): Promise<MenuItem[]> {
+    try {
+      const currentDate = new Date().toISOString().split("T")[0];
+
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT FI.id, FI.name, FI.price, FI.availability_status, SUM(RI.votes) AS votes
+         FROM Food_Item FI
+         JOIN RollOut_Menu RI ON FI.id = RI.food_item
+         WHERE RI.date = ?
+         GROUP BY FI.id, FI.name, FI.price, FI.availability_status
+         ORDER BY votes DESC`,
+        [currentDate]
+      );
+
+      const recommendedItems: any = rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        price: parseFloat(row.price),
+        availability: row.availability_status === 1,
+        votes: row.votes,
+      }));
+
+      return recommendedItems;
+    } catch (error) {
+      console.error("Error fetching user recommended items:", error);
+      throw error;
+    }
+  }
+
+  async finalizeMenu(
+    breakfast: number,
+    lunch: number,
+    dinner: number,
+    date: string
+  ): Promise<void> {
+    try {
+      await pool.execute(
+        `INSERT INTO Nth_Day_Menu (meal_type, food_item, date)
+         VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)`,
+        [1, breakfast, date, 2, lunch, date, 3, dinner, date]
+      );
+    } catch (error) {
+      console.error("Error finalizing menu:", error);
+      throw error;
+    }
+  }
+
+  
 }
+

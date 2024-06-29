@@ -74,7 +74,7 @@ export class ItemService {
       throw error;
     }
   }
-  
+
   async saveVotes(userId: number, votes: Votes): Promise<string> {
     try {
       const existingVotes = await this.itemRepository.getUserVotes(userId);
@@ -91,5 +91,29 @@ export class ItemService {
       console.error("Error saving votes:", error);
       throw error;
     }
+  }
+
+  async getUserRecommendedItems(): Promise<MenuItem[]> {
+    try {
+      return await this.itemRepository.getUserRecommendedItems();
+    } catch (error) {
+      console.error("Error fetching user recommended items:", error);
+      throw error;
+    }
+  }
+
+  async finalizeMenu(
+    breakfast: number,
+    lunch: number,
+    dinner: number
+  ): Promise<void> {
+    
+    const currentDate = new Date().toISOString().split("T")[0];
+    await this.itemRepository.finalizeMenu(
+      breakfast,
+      lunch,
+      dinner,
+      currentDate
+    );
   }
 }

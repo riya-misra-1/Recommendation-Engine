@@ -6,10 +6,10 @@ export interface Functionalities {
 
 export const RoleFunctionalities: Functionalities = {
   Admin: ["Add menu item", "Update menu item", "Delete menu item", "View menu"],
-  Chef: ["View menu","Roll out items", "Recommendation", "View feedback report"],
+  Chef: ["View menu","Roll out items", "View User Recommended Items", "Finalize menu"],
   Employee: [
     "View notifications",
     "Vote for food",
-    "View ratings and comments",
+    "Provide Feedback",
   ],
 };

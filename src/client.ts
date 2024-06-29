@@ -91,7 +91,12 @@ socket.on("result",async(message)=>{
       console.log("Result:", data);
       break;
     case "Chef":
-      console.log("Result:", data);
+     if (Array.isArray(data) && data.length > 0) {
+        console.table(data);
+     } else{
+        console.log("Result:", data);     
+     }
+      
       break;
     default:
       console.error("Unknown role received from server");
