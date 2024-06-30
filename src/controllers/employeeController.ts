@@ -46,14 +46,30 @@ export class EmployeeController {
     }
   }
 
-  executeEmployeeFunctionality(index: number, userId: number, payload: Votes | string) {
+  async takeRating(userId: number, payload: any): Promise<string> {
+    try {
+      const ratingResponses = await feedbackService.takeRating(userId, payload);
+      return ratingResponses;
+    } catch (error) {
+      console.error("Error recording rating:", error);
+      throw error;
+    }
+  }
+
+  executeEmployeeFunctionality(
+    index: number,
+    userId: number,
+    payload: Votes | string
+  ) {
     switch (index) {
       case 0:
         return this.viewNotifications();
       case 1:
         return this.voteForFood(userId, payload as Votes);
       case 2:
-        return this.takeFeedback(userId,payload);
+        return this.takeFeedback(userId, payload);
+      case 3:
+        return this.takeRating(userId, payload);
       default:
         console.error("Invalid employee functionality index");
     }

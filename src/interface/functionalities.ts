@@ -11,5 +11,6 @@ export const RoleFunctionalities: Functionalities = {
     "View notifications",
     "Vote for food",
     "Provide Feedback",
+    "Provide Rating"
   ],
 };
