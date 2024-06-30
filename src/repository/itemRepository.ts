@@ -1,4 +1,4 @@
-import { Pool, RowDataPacket } from "mysql2/promise";
+import { Pool, QueryResult, RowDataPacket } from "mysql2/promise";
 import pool from "../db-connection";
 import { MenuItem } from "../interface/menuItem";
 import { MealType, RolloutItem } from "../interface/mealType";
@@ -133,13 +133,14 @@ export class ItemRepository {
 
   async saveVotes(userId: number, votes: Votes): Promise<void> {
     try {
+      const date = new Date().toISOString().slice(0, 10);
       const voteQueries = Object.entries(votes).map(([mealType, itemId]) => {
         const voteQuery = `
-          INSERT INTO Vote (userId, itemId)
-          VALUES (?, ?)
+          INSERT INTO Vote (userId, itemId, date)
+          VALUES (?, ?, ?)
           ON DUPLICATE KEY UPDATE
-            itemId = VALUES(itemId)`;
-        return pool.execute(voteQuery, [userId, itemId]);
+            itemId = VALUES(itemId), date = VALUES(date)`;
+        return pool.execute(voteQuery, [userId, itemId, date]);
       });
 
       await Promise.all(voteQueries);
@@ -167,9 +168,10 @@ export class ItemRepository {
 
   async getUserVotes(userId: number): Promise<{ itemId: number }[]> {
     try {
+      const currentDate = new Date().toISOString().slice(0, 10);
       const [rows] = await pool.execute<RowDataPacket[]>(
-        "SELECT itemId FROM Vote WHERE userId = ?",
-        [userId]
+        "SELECT itemId AS itemId FROM Vote WHERE userId = ? AND date = ?",
+        [userId, currentDate]
       );
 
       const userVotes = rows.map((row) => ({
@@ -230,6 +232,31 @@ export class ItemRepository {
     }
   }
 
-  
+  async showMenuForToday(): Promise<RolledOutItem[]> {
+    try {
+      const currentDate = new Date().toISOString().slice(0, 10);
+
+      const query = `
+         SELECT FI.id, FI.name AS item_name, FI.price, MT.type AS meal_type
+        FROM Nth_Day_Menu NDM
+        INNER JOIN Food_Item FI ON NDM.food_item = FI.id
+        INNER JOIN Meal_Type MT ON NDM.meal_type = MT.id
+        WHERE DATE(NDM.date) = ?`;
+
+      const [rows] = await pool.execute<RowDataPacket[]>(query, [currentDate]);
+
+      const nthDayItems: RolledOutItem[] = rows.map((row) => ({
+        id: row.id,
+        itemName: row.item_name,
+        price: row.price,
+        mealType: row.meal_type,
+      }));
+
+      return nthDayItems;
+    } catch (error) {
+      console.error("Error in showMenuForToday:", error);
+      throw error;
+    }
+  }
 }
 

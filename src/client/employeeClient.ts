@@ -21,8 +21,20 @@ export class EmployeeClient {
   async handleEmployeeFunctionalities(
     index: number,
     socket: Socket
-  ): Promise<Votes | void> {
-    const employeeFunctions = [this.viewNotifications, this.voteForFood];
+  ): Promise<
+    | Votes
+    | void
+    | {
+        breakfast: { id: number; feedback: string };
+        lunch: { id: number; feedback: string };
+        dinner: { id: number; feedback: string };
+      }
+  > {
+    const employeeFunctions = [
+      this.viewNotifications,
+      this.voteForFood,
+      this.takeFeedback,
+    ];
 
     const selectedFunction = employeeFunctions[index];
     if (selectedFunction) {
@@ -106,4 +118,40 @@ export class EmployeeClient {
       throw error;
     }
   };
+
+  async takeFeedback(): Promise<{
+    breakfast: { id: number; feedback: string };
+    lunch: { id: number; feedback: string };
+    dinner: { id: number; feedback: string };
+  }> {
+    try {
+      const nthDayItems = await itemRepository.showMenuForToday();
+      console.table(nthDayItems);
+
+      const feedback: {
+        breakfast: { id: number; feedback: string };
+        lunch: { id: number; feedback: string };
+        dinner: { id: number; feedback: string };
+      } = {
+        breakfast: {
+          id:
+            nthDayItems.find((item) => item.mealType === "Breakfast")?.id || 0,
+          feedback: await getInputFromClient("Enter feedback for Breakfast: "),
+        },
+        lunch: {
+          id: nthDayItems.find((item) => item.mealType === "Lunch")?.id || 0,
+          feedback: await getInputFromClient("Enter feedback for Lunch: "),
+        },
+        dinner: {
+          id: nthDayItems.find((item) => item.mealType === "Dinner")?.id || 0,
+          feedback: await getInputFromClient("Enter feedback for Dinner: "),
+        },
+      };
+
+      return feedback;
+    } catch (error) {
+      console.error("Error in takeFeedback:", error);
+      throw error;
+    }
+  }
 }
