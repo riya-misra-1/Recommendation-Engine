@@ -33,30 +33,13 @@ export class EmployeeController {
     }
   }
 
-  async takeFeedback(userId: number, payload: any): Promise<void> {
-    const { breakfast, lunch, dinner } = payload;
-
+  async takeFeedback(userId: number, payload: any): Promise<string> {
     try {
-      await feedbackService.takeFeedback(
+      const feedbackResponses = await feedbackService.takeFeedback(
         userId,
-        breakfast,
-        "Breakfast Feedback",
-        new Date().toISOString().slice(0, 10)
+        payload
       );
-      await feedbackService.takeFeedback(
-        userId,
-        lunch,
-        "Lunch Feedback",
-        new Date().toISOString().slice(0, 10)
-      );
-      await feedbackService.takeFeedback(
-        userId,
-        dinner,
-        "Dinner Feedback",
-        new Date().toISOString().slice(0, 10)
-      );
-
-      console.log("Feedback recorded successfully.");
+      return feedbackResponses;
     } catch (error) {
       console.error("Error recording feedback:", error);
       throw error;
@@ -70,8 +53,7 @@ export class EmployeeController {
       case 1:
         return this.voteForFood(userId, payload as Votes);
       case 2:
-        this.takeFeedback(userId,payload);
-        break;
+        return this.takeFeedback(userId,payload);
       default:
         console.error("Invalid employee functionality index");
     }
