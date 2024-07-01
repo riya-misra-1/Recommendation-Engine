@@ -13,6 +13,13 @@ export class ItemRepository {
         "INSERT INTO Food_Item(category, name, price, availability_status) VALUES (?, ?, ?, ?)",
         [category, name, price, availability]
       );
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const notificationMessage = `Menu item '${name}' has been added on ${currentDate}.`;
+
+      await pool.execute(
+        "INSERT INTO Notification (notification, date) VALUES (?, ?)",
+        [notificationMessage, currentDate]
+      );
     } catch (error) {
       console.error("Error adding menu item:", error);
       throw error;
@@ -56,6 +63,13 @@ export class ItemRepository {
           [value, name]
         );
       }
+      
+       const currentDate = new Date().toISOString().slice(0, 10);
+        const notificationMessage = `Menu item '${name}' has been updated  on ${currentDate}.`;
+       await pool.execute(
+         "INSERT INTO Notification (notification, date) VALUES (?, ?)",
+         [notificationMessage, currentDate]
+       );
     } catch (error) {
       console.error("Error updating menu item:", error);
       throw error;
@@ -68,6 +82,16 @@ export class ItemRepository {
         "DELETE FROM RollOut_Menu WHERE food_item = (SELECT id FROM Food_Item WHERE name = ?)",
         [name]
       );
+            await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
+
+            
+            const currentDate = new Date().toISOString().slice(0, 10);
+            const notificationMessage = `Menu item '${name}' has been deleted  on ${currentDate}.`;
+            await pool.execute(
+              "INSERT INTO Notification (notification, date) VALUES (?, ?)",
+              [notificationMessage, currentDate]
+            );
+
 
       await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
     } catch (error) {
@@ -109,11 +133,11 @@ export class ItemRepository {
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
       const [rows] = await pool.execute<RowDataPacket[]>(
-        `SELECT fi.id AS food_item_id, fi.name AS item_name, fi.price, mt.type AS meal_type
-        FROM RollOut_Menu rm
-        INNER JOIN Food_Item fi ON rm.food_item = fi.id
-        INNER JOIN Meal_Type mt ON rm.meal_type = mt.id
-        WHERE DATE(rm.date) = ?`,
+        `SELECT fi.id AS food_item_id, fi.name AS item_name, fi.price, fi.sentiments, fi.average_rating, mt.type AS meal_type
+      FROM RollOut_Menu rm
+      INNER JOIN Food_Item fi ON rm.food_item = fi.id
+      INNER JOIN Meal_Type mt ON rm.meal_type = mt.id
+      WHERE DATE(rm.date) = ?`,
         [currentDate]
       );
 
@@ -121,6 +145,8 @@ export class ItemRepository {
         id: row.food_item_id,
         itemName: row.item_name,
         price: row.price,
+        sentiments: row.sentiments,
+        averageRating: row.average_rating,
         mealType: row.meal_type,
       }));
 
@@ -190,12 +216,12 @@ export class ItemRepository {
       const currentDate = new Date().toISOString().split("T")[0];
 
       const [rows] = await pool.execute<RowDataPacket[]>(
-        `SELECT FI.id, FI.name, FI.price, FI.availability_status, SUM(RI.votes) AS votes
-         FROM Food_Item FI
-         JOIN RollOut_Menu RI ON FI.id = RI.food_item
-         WHERE RI.date = ?
-         GROUP BY FI.id, FI.name, FI.price, FI.availability_status
-         ORDER BY votes DESC`,
+        `SELECT FI.id, FI.name, FI.price, FI.availability_status, FI.sentiments, FI.average_rating, SUM(RI.votes) AS votes
+       FROM Food_Item FI
+       JOIN RollOut_Menu RI ON FI.id = RI.food_item
+       WHERE RI.date = ?
+       GROUP BY FI.id, FI.name, FI.price, FI.availability_status, FI.sentiments, FI.average_rating
+       ORDER BY votes DESC`,
         [currentDate]
       );
 
@@ -204,6 +230,8 @@ export class ItemRepository {
         name: row.name,
         price: parseFloat(row.price),
         availability: row.availability_status === 1,
+        sentiments: row.sentiments,
+        averageRating: row.average_rating,
         votes: row.votes,
       }));
 

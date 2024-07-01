@@ -17,4 +17,19 @@ export class NotificationRepository {
       throw error;
     }
   }
+  
+  async getHistoricalNotifications(): Promise<
+    { notification: string; date: string }[]
+  > {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      "SELECT notification, date FROM Notification WHERE DATE(date) < ? AND notification != ?",
+      [currentDate, "Tomorrow's menu is rolled out by chef."]
+    );
+
+    return rows.map((row) => ({
+      notification: row.notification,
+      date: row.date,
+    }));
+  }
 }

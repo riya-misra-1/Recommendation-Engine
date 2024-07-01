@@ -7,7 +7,7 @@ export async function getSentimentAnalysis(text: string): Promise<number> {
       "Xenova/bert-base-multilingual-uncased-sentiment"
     );
     const result: any = await classifier(text);
-
+    console.log('Result',result);
     if (!result || !result[0] || !result[0].label) {
       throw new Error("Invalid sentiment analysis result");
     }
