@@ -9,16 +9,13 @@ const notificationService = new NotificationService();
 const itemService = new ItemService();
 const feedbackService = new FeedbackService();
 export class EmployeeController {
-  async viewNotifications(): Promise<string[]> {
+   async viewNotifications(): Promise<string[]> {
     try {
-      const notifications =
-        await notificationService.getNotificationsForToday();
-      return notifications;
+      const todayNotifications = await notificationService.getNotificationsForToday();
+      const historicalNotifications = await notificationService.getHistoricalNotifications();
+      return [...todayNotifications, ...historicalNotifications];
     } catch (error) {
-      console.error(
-        "Error fetching notifications in EmployeeController:",
-        error
-      );
+      console.error("Error fetching notifications in EmployeeController:", error);
       throw error;
     }
   }
