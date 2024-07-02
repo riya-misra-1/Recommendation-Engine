@@ -6,6 +6,14 @@ import { RolledOutItem } from "../interface/rolledOutItem";
 import { Votes } from "../interface/votes";
 
 export class ItemRepository {
+  async addNotification(message: string): Promise<void> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    await pool.execute(
+      "INSERT INTO Notification (notification, date) VALUES (?, ?)",
+      [message, currentDate]
+    );
+  }
+
   async addItem(menuItem: MenuItem): Promise<void> {
     const { category, name, price, availability } = menuItem;
     try {
@@ -13,13 +21,7 @@ export class ItemRepository {
         "INSERT INTO Food_Item(category, name, price, availability_status) VALUES (?, ?, ?, ?)",
         [category, name, price, availability]
       );
-      const currentDate = new Date().toISOString().slice(0, 10);
-      const notificationMessage = `Menu item '${name}' has been added on ${currentDate}.`;
-
-      await pool.execute(
-        "INSERT INTO Notification (notification, date) VALUES (?, ?)",
-        [notificationMessage, currentDate]
-      );
+       await this.addNotification(`Menu item '${name}' has been added on ${new Date().toISOString().slice(0, 10)}.`);
     } catch (error) {
       console.error("Error adding menu item:", error);
       throw error;
@@ -63,12 +65,11 @@ export class ItemRepository {
           [value, name]
         );
       }
-      
-       const currentDate = new Date().toISOString().slice(0, 10);
-        const notificationMessage = `Menu item '${name}' has been updated  on ${currentDate}.`;
-       await pool.execute(
-         "INSERT INTO Notification (notification, date) VALUES (?, ?)",
-         [notificationMessage, currentDate]
+
+       await this.addNotification(
+         `Menu item '${name}' has been updated on ${new Date()
+           .toISOString()
+           .slice(0, 10)}.`
        );
     } catch (error) {
       console.error("Error updating menu item:", error);
@@ -82,16 +83,13 @@ export class ItemRepository {
         "DELETE FROM RollOut_Menu WHERE food_item = (SELECT id FROM Food_Item WHERE name = ?)",
         [name]
       );
-            await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
+      await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
 
-            
-            const currentDate = new Date().toISOString().slice(0, 10);
-            const notificationMessage = `Menu item '${name}' has been deleted  on ${currentDate}.`;
-            await pool.execute(
-              "INSERT INTO Notification (notification, date) VALUES (?, ?)",
-              [notificationMessage, currentDate]
-            );
-
+      await this.addNotification(
+        `Menu item '${name}' has been deleted on ${new Date()
+          .toISOString()
+          .slice(0, 10)}.`
+      );
 
       await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
     } catch (error) {
@@ -109,11 +107,7 @@ export class ItemRepository {
 
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
-      const notificationMessage = `Tomorrow's menu is rolled out by chef.`;
-      await pool.execute(
-        "INSERT INTO Notification (notification,date) VALUES (?, ?)",
-        [notificationMessage, currentDate]
-      );
+      await this.addNotification(`Tomorrow's menu is rolled out by the chef.`);
       const queries = itemsToRollout.map(async ({ itemId, mealType }) => {
         const mealTypeId = mealTypeMap[mealType];
 
