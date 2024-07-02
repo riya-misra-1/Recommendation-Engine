@@ -12,6 +12,7 @@ export class ChefClient {
       this.rolloutItems,
       this.viewUserRecommendedItems,
       this.finalizeMenu,
+      this.viewNotifications,
     ];
 
     const selectedFunction = chefFunctions[index];
@@ -112,7 +113,7 @@ export class ChefClient {
   ): Promise<number> => {
     const mealTypeKey = mealType.toLowerCase();
     const rolledOutItemsIds = rolledOutItems
-      .filter((item) => item.mealType.toLowerCase() === mealTypeKey) 
+      .filter((item) => item.mealType.toLowerCase() === mealTypeKey)
       .map((item) => item.id);
 
     while (true) {
@@ -121,7 +122,6 @@ export class ChefClient {
       );
       const itemId = parseInt(input, 10);
 
-
       if (!rolledOutItemsIds.includes(itemId)) {
         console.error(`Invalid ${mealType} item ID: ${itemId}`);
       } else {
@@ -129,4 +129,8 @@ export class ChefClient {
       }
     }
   };
+  async viewNotifications() {
+    console.log("Fetching notifications...");
+    return;
+  }
 }
