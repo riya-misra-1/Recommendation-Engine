@@ -3,7 +3,10 @@ import { FeedbackRepository } from "../repository/feedbackRepository";
 const feedbackRepository = new FeedbackRepository();
 
 export class FeedbackService {
-  async takeFeedback(userId: number, payload: any): Promise<string> {
+  async takeFeedback(
+    userId: number,
+    payload: any
+  ): Promise<{ success: boolean; message: string }> {
     const { breakfast, lunch, dinner } = payload;
     const date = new Date().toISOString().slice(0, 10);
 
@@ -54,17 +57,20 @@ export class FeedbackService {
       }
 
       if (responseMessage) {
-        return responseMessage;
+        return { success: false, message: responseMessage };
       }
 
-      return "Feedback recorded successfully.";
+      return { success: true, message: "Feedback recorded successfully." };
     } catch (error) {
       console.error("Error in takeFeedback service:", error);
-      throw error;
+      return { success: false, message: "Error recording feedback" };
     }
   }
 
-  async takeRating(userId: number, payload: any): Promise<string> {
+  async takeRating(
+    userId: number,
+    payload: any
+  ): Promise<{ success: boolean; message: string }> {
     const { breakfast, lunch, dinner } = payload;
     const date = new Date().toISOString().slice(0, 10);
 
@@ -116,13 +122,13 @@ export class FeedbackService {
       }
 
       if (responseMessage) {
-        return responseMessage;
+        return { success: false, message: responseMessage };
       }
 
-      return "Rating recorded successfully.";
+      return { success: true, message: "Rating recorded successfully." };
     } catch (error) {
       console.error("Error in takeRating service:", error);
-      throw error;
+      return { success: false, message: "Error recording rating" };
     }
   }
 
@@ -159,12 +165,7 @@ export class FeedbackService {
       return "User already provided rating for today's item.";
     }
 
-    try {
-      await feedbackRepository.takeRating(userId, itemId, rating, date);
-      return "Rating recorded successfully.";
-    } catch (error) {
-      console.error("Error taking rating:", error);
-      throw error;
-    }
+    await feedbackRepository.takeRating(userId, itemId, rating, date);
+    return "Rating recorded successfully.";
   }
 }

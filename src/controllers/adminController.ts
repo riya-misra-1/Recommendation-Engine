@@ -1,65 +1,61 @@
-import pool from "../db-connection";
 import { MenuItem } from "../interface/menuItem";
 import { ItemService } from "../services/itemService";
 
-var itemService = new ItemService()
+var itemService = new ItemService();
+
 export class AdminController {
-  async addMenuItem(menuItem: MenuItem) {
-    try {
-      const message: string = await itemService.addItem(menuItem);
-      return message;
-    } catch (error) {
-      throw error;
-    }
+  async addMenuItem(
+    menuItem: MenuItem
+  ): Promise<{ success: boolean; message: string }> {
+    return await itemService.addItem(menuItem);
   }
 
   async updateMenuItem(
     name: string,
     updates: { field: string; value: string | number }[]
-  ) {
-    try {
-      const messages = [];
-      for (const update of updates) {
-        const message: string = await itemService.updateItem(
-          name,
-          update.field,
-          update.value
-        );
-        messages.push(message);
-      }
-      return messages.join(", ");
-    } catch (error) {
-      throw error;
+  ): Promise<{ success: boolean; message: string }[]> {
+    const messages = [];
+    for (const update of updates) {
+      const message = await itemService.updateItem(
+        name,
+        update.field,
+        update.value
+      );
+      messages.push(message);
     }
+    return messages;
   }
 
-  async deleteMenuItem(name: string) {
-    try {
-      const message: string = await itemService.deleteItem(name);
-      return message;
-    } catch (error) {
-      throw error;
-    }
+  async deleteMenuItem(
+    name: string
+  ): Promise<{ success: boolean; message: string }> {
+    return await itemService.deleteItem(name);
   }
 
-  async viewMenu() {
-    try {
-      const menu = await itemService.viewMenu();
-      return menu;
-    } catch (error) {
-      throw error;
-    }
+  async viewMenu(): Promise<{
+    success: boolean;
+    message: MenuItem[] | string;
+  }> {
+    return await itemService.viewMenu();
   }
 
-  async executeAdminFunctionality(index: number, payload: any) {
-    let result;
+  async executeAdminFunctionality(
+    index: number,
+    payload: any
+  ): Promise<{ success: boolean; message: string | MenuItem[] }> {
+    let result: { success: boolean; message: string | MenuItem[] };
+
     switch (index) {
       case 0:
         result = await this.addMenuItem(payload);
         break;
       case 1:
         const { name, updates } = payload;
-        result = await this.updateMenuItem(name, updates);
+        const updateResults = await this.updateMenuItem(name, updates);
+        result = {
+          success: true,
+          message: updateResults.map((res) => res.message).join(", "),
+        };
         break;
       case 2:
         const { name: deleteName } = payload;
@@ -69,7 +65,10 @@ export class AdminController {
         result = await this.viewMenu();
         break;
       default:
-        console.error("Invalid admin functionality index");
+        result = {
+          success: false,
+          message: "Invalid admin functionality index",
+        };
     }
     return result;
   }

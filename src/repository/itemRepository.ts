@@ -21,7 +21,11 @@ export class ItemRepository {
         "INSERT INTO Food_Item(category, name, price, availability_status) VALUES (?, ?, ?, ?)",
         [category, name, price, availability]
       );
-       await this.addNotification(`Menu item '${name}' has been added on ${new Date().toISOString().slice(0, 10)}.`);
+      await this.addNotification(
+        `Menu item '${name}' has been added on ${new Date()
+          .toISOString()
+          .slice(0, 10)}.`
+      );
     } catch (error) {
       console.error("Error adding menu item:", error);
       throw error;
@@ -31,14 +35,16 @@ export class ItemRepository {
   async getMenuItems(): Promise<MenuItem[]> {
     try {
       const [rows] = await pool.execute<RowDataPacket[]>(
-        "SELECT id,name, price, availability_status FROM Food_Item"
+        "SELECT id, name, price, availability_status, sentiments, average_rating FROM Food_Item ORDER BY sentiments DESC"
       );
 
-      const menuItems: any = rows.map((row) => ({
+      const menuItems:MenuItem[] = rows.map((row) => ({
         id: row.id,
         name: row.name,
         price: parseFloat(row.price),
         availability: row.availability_status === 1,
+        sentiments: row.sentiments,
+        averageRating: parseFloat(row.average_rating), 
       }));
 
       return menuItems;
@@ -66,11 +72,11 @@ export class ItemRepository {
         );
       }
 
-       await this.addNotification(
-         `Menu item '${name}' has been updated on ${new Date()
-           .toISOString()
-           .slice(0, 10)}.`
-       );
+      await this.addNotification(
+        `Menu item '${name}' has been updated on ${new Date()
+          .toISOString()
+          .slice(0, 10)}.`
+      );
     } catch (error) {
       console.error("Error updating menu item:", error);
       throw error;

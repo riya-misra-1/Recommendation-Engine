@@ -1,70 +1,61 @@
-import { ItemService } from "../services/itemService";
 import { MenuItem } from "../interface/menuItem";
-import { ItemRepository } from "../repository/itemRepository";
-import { MealType, RolloutItem } from "../interface/mealType";
-import { getInputFromClient } from "../utils/promptMessage";
+import { ItemService } from "../services/itemService";
 import { NotificationService } from "../services/notificationService";
+import { RolloutItem } from "../interface/mealType";
 
 const itemService = new ItemService();
 const notificationService = new NotificationService();
 
 export class ChefController {
-  viewMenu(): Promise<MenuItem[]> {
-    try {
-      return itemService.showMenu();
-    } catch (error) {
-      console.error("Error fetching menu items:", error);
-      throw error;
-    }
+  async viewMenu(): Promise<{
+    success: boolean;
+    message: MenuItem[] | string;
+  }> {
+    return await itemService.showMenu();
   }
 
-  async rolloutItems(itemsToRollout: RolloutItem[]): Promise<string> {
-    try {
-      await itemService.rolloutMenuItems(itemsToRollout);
-      return "Menu rolled out successfully";
-    } catch (error) {
-      console.error("Error rolling out menu items:", error);
-      throw error;
-    }
+  async rolloutItems(
+    itemsToRollout: RolloutItem[]
+  ): Promise<{ success: boolean; message: string }> {
+    await itemService.rolloutMenuItems(itemsToRollout);
+    return { success: true, message: "Menu rolled out successfully" };
   }
 
-  async viewUserRecommendedItems(): Promise<MenuItem[]> {
-    try {
-      return await itemService.getUserRecommendedItems();
-    } catch (error) {
-      console.error("Error fetching user recommended items:", error);
-      throw error;
-    }
+  async viewUserRecommendedItems(): Promise<{
+    success: boolean;
+    message: MenuItem[] | string;
+  }> {
+    return await itemService.getUserRecommendedItems();
   }
 
   async finalizeMenu(
     breakfast: number,
     lunch: number,
     dinner: number
-  ): Promise<string> {
-    try {
-      await itemService.finalizeMenu(breakfast, lunch, dinner);
-      return "Menu finalized successfully";
-    } catch (error) {
-      console.error("Error finalizing menu:", error);
-      throw error;
+  ): Promise<{ success: boolean; message: string }> {
+    await itemService.finalizeMenu(breakfast, lunch, dinner);
+    return { success: true, message: "Menu finalized successfully" };
+  }
+
+  async viewNotifications(): Promise<{
+    success: boolean;
+    message: string | string[];
+  }> {
+    const response = await notificationService.getHistoricalNotifications();
+    if (response.success) {
+      const messages: string[] = Array.isArray(response.message)
+        ? response.message
+        : [response.message];
+      return { success: true, message: messages };
+    } else {
+      return { success: false, message: ["Error fetching notifications"] };
     }
   }
 
-  async viewNotifications(): Promise<string[]> {
-    try {
-      const historicalNotifications =
-        await notificationService.getHistoricalNotifications();
-      return historicalNotifications;
-    } catch (error) {
-      console.error(
-        "Error fetching notifications in EmployeeController:",
-        error
-      );
-      throw error;
-    }
-  }
-  executeChefFunctionality(index: number, payload: any) {
+  executeChefFunctionality(
+    index: number,
+    payload: any
+  ): Promise<{ success: boolean; message: string | string[] | MenuItem[] }> {
     switch (index) {
       case 0:
         return this.viewMenu();
@@ -81,8 +72,10 @@ export class ChefController {
       case 4:
         return this.viewNotifications();
       default:
-        console.error("Invalid chef functionality index");
-        return Promise.reject("Invalid chef functionality index");
+        return Promise.resolve({
+          success: false,
+          message: "Invalid chef functionality index",
+        });
     }
   }
 }

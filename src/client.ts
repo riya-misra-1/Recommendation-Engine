@@ -80,12 +80,18 @@ socket.on("result",async(message)=>{
   switch (role) {
     case "Employee":
      if (Array.isArray(data) && data.length > 0) {
-        data.forEach((notification, index) => {
-          console.log(`${index + 1}. ${notification}`);
-        });
-      } else {
-        console.log("Result:", data);
-      }
+       data.forEach((notification, index) => {
+         if (notification.message && Array.isArray(notification.message)) {
+           notification.message.forEach((msg: string) => {
+             console.log(`${index + 1}. ${msg}`);
+           });
+         } else {
+           console.log(`${index + 1}. Unexpected data format for notification`);
+         }
+       });
+     } else {
+       console.log("No notifications or unexpected data format:", data);
+     }
       break;
     case "Admin":
       console.log("Result:", data);

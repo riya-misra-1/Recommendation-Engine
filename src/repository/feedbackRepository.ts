@@ -125,7 +125,7 @@ export class FeedbackRepository {
        WHERE user_id = ? AND date_of_feedback = ?`,
         [userId, date]
       );
-
+      console.log("Rows", rows);
       return rows.map((row) => ({
         itemId: row.itemId,
         rating: row.rating !== null ? row.rating : null,
