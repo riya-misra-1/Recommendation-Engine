@@ -35,7 +35,7 @@ io.on("connection", (socket: Socket) => {
           const { role } = result;
           if (index >= 0 && index < functionalities.length) {
             console.log(`Executing functionality: ${functionalities[index]}`);
-            let response;
+            let response: { success: boolean; message: string | string[] | MenuItem[] } = { success: false, message: "" };
             switch (role) {
               case "Admin":
                 response = await adminController.executeAdminFunctionality(
@@ -50,19 +50,24 @@ io.on("connection", (socket: Socket) => {
                 );
                 break;
               case "Employee":
-                  const userId = result.user?.id;
                   response =
                     await employeeController.executeEmployeeFunctionality(
                       index,
                       result.user?.id as number,
                       payload 
                     );
+                    console.log('Response:', response);
                 break;
               default:
                 socket.emit("error", "Unknown user role");
             }
+            if(response.success === true){
+              socket.emit("result", { role: role, data: response.message });
+            }else{
+              socket.emit("error", response.message);
+            }
             // socket.emit("result", response);
-            socket.emit("result", { role: role, data: response });
+            // socket.emit("result", { role: role, data: response });
           } else {
             socket.emit("error", "Invalid functionality index");
           }
