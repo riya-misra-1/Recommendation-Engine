@@ -13,25 +13,16 @@ export class EmployeeController {
     success: boolean;
     message: string[] | string;
   }> {
-    const todayNotifications =
-      await notificationService.getNotificationsForToday();
-    const historicalNotifications =
-      await notificationService.getHistoricalNotifications();
+    const receiverStatusCode = "2";
+  const result = await notificationService.viewNotifications(
+    receiverStatusCode
+  );
+        console.log("Notifications employee:", result.message);
 
-    const todayMessages = Array.isArray(todayNotifications)
-      ? todayNotifications
-      : [todayNotifications];
-
-    const historicalMessages = Array.isArray(historicalNotifications)
-      ? historicalNotifications
-      : [historicalNotifications];
-
-    const allNotifications = [...todayMessages, ...historicalMessages];
-    console.log("All notifications:", allNotifications);
-    return {
-      success: true,
-      message: allNotifications,
-    };
+  return {
+    success: result.success,
+    message: result.message,
+  };
   }
 
   async voteForFood(

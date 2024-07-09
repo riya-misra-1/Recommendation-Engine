@@ -8,7 +8,7 @@ import { EmployeeClient } from "./client/employeeClient";
 const socket: Socket = io("http://localhost:3000");
 const adminClient = new AdminClient();
 const chefClient = new ChefClient();
-const employeeClient = new EmployeeClient(socket);
+const employeeClient = new EmployeeClient();
 
 async function inputUserCredentials() {
   const email = await getInputFromClient("Enter your email: ");
@@ -38,11 +38,11 @@ async function executeFunctionality(
         payload = await adminClient.handleAdminFunctionalities(index);
         break;
       case "Chef":
-        payload = await chefClient.handleChefFunctionalities(index);
+        payload = await chefClient.handleChefFunctionalities(index,socket);
+        console.log("Payload:", payload);
         break;
       case "Employee":
         payload = await employeeClient.handleEmployeeFunctionalities(index, socket);
-        console.log('Payload:', payload);
         break;
       default:
         console.error("Unknown role");
@@ -80,17 +80,9 @@ socket.on("result",async(message)=>{
   switch (role) {
     case "Employee":
      if (Array.isArray(data) && data.length > 0) {
-       data.forEach((notification, index) => {
-         if (notification.message && Array.isArray(notification.message)) {
-           notification.message.forEach((msg: string) => {
-             console.log(`${index + 1}. ${msg}`);
-           });
-         } else {
-           console.log(`${index + 1}. Unexpected data format for notification`);
-         }
-       });
+       console.table(data);
      } else {
-       console.log("No notifications or unexpected data format:", data);
+       console.log("Result:", data);
      }
       break;
     case "Admin":

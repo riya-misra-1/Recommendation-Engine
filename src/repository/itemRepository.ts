@@ -6,11 +6,15 @@ import { RolledOutItem } from "../interface/rolledOutItem";
 import { Votes } from "../interface/votes";
 
 export class ItemRepository {
-  async addNotification(message: string): Promise<void> {
+  async addNotification(
+    message: string,
+    type: number,
+    toWhom: number
+  ): Promise<void> {
     const currentDate = new Date().toISOString().slice(0, 10);
     await pool.execute(
-      "INSERT INTO Notification (notification, date) VALUES (?, ?)",
-      [message, currentDate]
+      "INSERT INTO Notification (notification, date, notification_type, to_whom) VALUES (?, ?, ?, ?)",
+      [message, currentDate, type, toWhom]
     );
   }
 
@@ -24,7 +28,9 @@ export class ItemRepository {
       await this.addNotification(
         `Menu item '${name}' has been added on ${new Date()
           .toISOString()
-          .slice(0, 10)}.`
+          .slice(0, 10)}.`,
+        1,
+        3
       );
     } catch (error) {
       console.error("Error adding menu item:", error);
@@ -38,13 +44,13 @@ export class ItemRepository {
         "SELECT id, name, price, availability_status, sentiments, average_rating FROM Food_Item ORDER BY sentiments DESC"
       );
 
-      const menuItems:MenuItem[] = rows.map((row) => ({
+      const menuItems: MenuItem[] = rows.map((row) => ({
         id: row.id,
         name: row.name,
         price: parseFloat(row.price),
         availability: row.availability_status === 1,
         sentiments: row.sentiments,
-        averageRating: parseFloat(row.average_rating), 
+        averageRating: parseFloat(row.average_rating),
       }));
 
       return menuItems;
@@ -75,7 +81,7 @@ export class ItemRepository {
       await this.addNotification(
         `Menu item '${name}' has been updated on ${new Date()
           .toISOString()
-          .slice(0, 10)}.`
+          .slice(0, 10)}.`,1,3
       );
     } catch (error) {
       console.error("Error updating menu item:", error);
@@ -85,16 +91,12 @@ export class ItemRepository {
 
   async deleteItem(name: string): Promise<void> {
     try {
-      await pool.execute(
-        "DELETE FROM RollOut_Menu WHERE food_item = (SELECT id FROM Food_Item WHERE name = ?)",
-        [name]
-      );
       await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
 
       await this.addNotification(
         `Menu item '${name}' has been deleted on ${new Date()
           .toISOString()
-          .slice(0, 10)}.`
+          .slice(0, 10)}.`,1,3
       );
 
       await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
@@ -113,7 +115,7 @@ export class ItemRepository {
 
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
-      await this.addNotification(`Tomorrow's menu is rolled out by the chef.`);
+      await this.addNotification(`Tomorrow's menu is rolled out by the chef.`,2,2);
       const queries = itemsToRollout.map(async ({ itemId, mealType }) => {
         const mealTypeId = mealTypeMap[mealType];
 
@@ -234,7 +236,7 @@ export class ItemRepository {
         averageRating: row.average_rating,
         votes: row.votes,
       }));
-
+      console.log("Recommended items:", recommendedItems);
       return recommendedItems;
     } catch (error) {
       console.error("Error fetching user recommended items:", error);
@@ -283,6 +285,19 @@ export class ItemRepository {
       return nthDayItems;
     } catch (error) {
       console.error("Error in showMenuForToday:", error);
+      throw error;
+    }
+  }
+
+  async saveNotification(itemId: number): Promise<void> {
+    try {
+      const [result] = await pool.execute<RowDataPacket[]>(
+        "INSERT INTO Notifications (item_id, message) VALUES (?, ?)",
+        [itemId, "Chef asked for detailed feedback for item"]
+      );
+      console.log("Notification saved successfully:", result);
+    } catch (error) {
+      console.error("Error saving notification:", error);
       throw error;
     }
   }
