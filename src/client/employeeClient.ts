@@ -1,23 +1,8 @@
 import { Socket } from "socket.io-client";
 import { getInputFromClient } from "../utils/promptMessage";
-import { ItemRepository } from "../repository/itemRepository";
 import { RolledOutItem } from "../interface/rolledOutItem";
 import { Votes } from "../interface/votes";
-const itemRepository = new ItemRepository();
 export class EmployeeClient {
-  private socket: Socket;
-
-  constructor(socket: Socket) {
-    this.socket = socket;
-    this.listenForNotifications();
-  }
-
-  private listenForNotifications() {
-    this.socket.on("notification", (message: string) => {
-      console.log("Notification received:", message);
-    });
-  }
-
   async handleEmployeeFunctionalities(
     index: number,
     socket: Socket
@@ -44,20 +29,20 @@ export class EmployeeClient {
 
     const selectedFunction = employeeFunctions[index];
     if (selectedFunction) {
-      return selectedFunction();
+      return selectedFunction(socket);
     } else {
       console.error("Invalid functionality index");
     }
   }
 
-  async viewNotifications() {
+  async viewNotifications(socket: Socket) {
     console.log("Fetching notifications...");
     return;
   }
 
   async promptForItemSelection(
     items: RolledOutItem[],
-    mealType: string
+    mealType: string,
   ): Promise<number> {
     let valid = false;
     let itemId: number = 0;
@@ -77,7 +62,9 @@ export class EmployeeClient {
     return itemId;
   }
 
-  async promptForBreakfast(breakfastItems: RolledOutItem[]): Promise<number> {
+  async promptForBreakfast(
+    breakfastItems: RolledOutItem[],
+  ): Promise<number> {
     return this.promptForItemSelection(breakfastItems, "Breakfast");
   }
 
@@ -89,7 +76,9 @@ export class EmployeeClient {
     return this.promptForItemSelection(dinnerItems, "Dinner");
   }
 
-  promptForVotes = async (rolledOutItems: RolledOutItem[]): Promise<Votes> => {
+  promptForVotes = async (
+    rolledOutItems: RolledOutItem[],
+  ): Promise<Votes> => {
     const breakfastItems = rolledOutItems.filter(
       (item) => item.mealType === "Breakfast"
     );
@@ -111,9 +100,17 @@ export class EmployeeClient {
     };
   };
 
-  voteForFood = async (): Promise<Votes> => {
+  voteForFood = async (socket: Socket): Promise<Votes> => {
     try {
-      const rolledOutItems = await itemRepository.getRolledOutItemsForToday();
+      const rolledOutItems = await new Promise<RolledOutItem[]>(
+        (resolve, reject) => {
+          socket.emit("requestRolledOutItems");
+          socket.on("responseRolledOutItems", (data: RolledOutItem[]) => {
+            console.log(data);
+            resolve(data);
+          });
+        }
+      );
       console.table(rolledOutItems);
 
       const votes = await this.promptForVotes(rolledOutItems);
@@ -125,13 +122,22 @@ export class EmployeeClient {
     }
   };
 
-  async takeFeedback(): Promise<{
+  async takeFeedback(socket: Socket): Promise<{
     breakfast: { id: number; feedback: string };
     lunch: { id: number; feedback: string };
     dinner: { id: number; feedback: string };
   }> {
     try {
-      const nthDayItems = await itemRepository.showMenuForToday();
+      // const nthDayItems = await itemRepository.showMenuForToday();
+      const nthDayItems = await new Promise<RolledOutItem[]>(
+        (resolve, reject) => {
+          socket.emit("requestTodayMenu");
+          socket.on("responseTodayMenu", (data: RolledOutItem[]) => {
+            console.log(data);
+            resolve(data);
+          });
+        }
+      );
       console.table(nthDayItems);
 
       const feedback: {
@@ -161,13 +167,22 @@ export class EmployeeClient {
     }
   }
 
-  async takeRating(): Promise<{
+  async takeRating(socket: Socket): Promise<{
     breakfast: { id: number; rating: number };
     lunch: { id: number; rating: number };
     dinner: { id: number; rating: number };
   }> {
     try {
-      const nthDayItems = await itemRepository.showMenuForToday();
+      // const nthDayItems = await itemRepository.showMenuForToday();
+      const nthDayItems = await new Promise<RolledOutItem[]>(
+        (resolve, reject) => {
+          socket.emit("requestTodayMenu");
+          socket.on("responseTodayMenu", (data: RolledOutItem[]) => {
+            console.log(data);
+            resolve(data);
+          });
+        }
+      );
       console.table(nthDayItems);
 
       const rating: {

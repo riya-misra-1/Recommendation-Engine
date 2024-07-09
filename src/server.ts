@@ -8,6 +8,8 @@ import { EmployeeController } from "./controllers/employeeController";
 import { MenuItem } from "./interface/menuItem";
 import { Votes } from "./interface/votes";
 import { ItemService } from "./services/itemService";
+import { RolledOutItem } from "./interface/rolledOutItem";
+import { DiscardedItemService } from "./services/discardService";
 
 const app = express();
 const server = createServer(app);
@@ -15,7 +17,8 @@ const io = new Server(server);
 const authController = new AuthController();
 const adminController = new AdminController();
 const chefController = new ChefController();
-const itemService = new ItemService();  
+const itemService = new ItemService();
+const discardService = new DiscardedItemService();
 io.on("connection", (socket: Socket) => {
   const employeeController = new EmployeeController();
 
@@ -66,8 +69,6 @@ io.on("connection", (socket: Socket) => {
             }else{
               socket.emit("error", response.message);
             }
-            // socket.emit("result", response);
-            // socket.emit("result", { role: role, data: response });
           } else {
             socket.emit("error", "Invalid functionality index");
           }
@@ -78,12 +79,52 @@ io.on("connection", (socket: Socket) => {
       });
       
     }
+
+     socket.on("requestRolledOutItems", async () => {
+       try {
+         const rolledOutItems = await itemService.getRolledOutItems();
+
+         socket.emit("responseRolledOutItems", rolledOutItems);
+       } catch (error) {
+         console.error("Error fetching rolled-out items:", error);
+         socket.emit("error", "Failed to fetch rolled-out items");
+       }
+     });
+      socket.on("requestTodayMenu", async () => {
+        try {
+          const todayMenu: RolledOutItem[] | string =
+            await itemService.showMenuForToday();
+          socket.emit("responseTodayMenu", todayMenu);
+        } catch (error) {
+          console.error("Error fetching today's menu:", error);
+          socket.emit("responseTodayMenu", []);
+        }
+      });
+      socket.on("requestDiscardedItems", async () => {
+        try {
+          const discardedItems = await discardService.getAllDiscardedItems();
+          socket.emit("responseDiscardedItems", discardedItems);
+        } catch (error) {
+          console.error("Error fetching discarded items:", error);
+          socket.emit("responseDiscardedItems", []);
+        }
+      });
+      socket.on("requestMenuItems", async () => {
+        try {
+          const menuItems = (await itemService.showMenu()).message;
+          socket.emit("responseMenuItems", menuItems);
+        } catch (error) {
+          console.error("Error fetching menu items:", error);
+          socket.emit("responseMenuItems", []);
+        }
+      });
   });
 
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
 });
+
 
 const PORT = 3000;
 server.listen(PORT, () => {

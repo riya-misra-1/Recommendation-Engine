@@ -17,8 +17,12 @@ export class ChefController {
   async rolloutItems(
     itemsToRollout: RolloutItem[]
   ): Promise<{ success: boolean; message: string }> {
-    await itemService.rolloutMenuItems(itemsToRollout);
+    const success = await itemService.rolloutMenuItems(itemsToRollout);
+    if(success){
     return { success: true, message: "Menu rolled out successfully" };
+    }else{
+      return { success: false, message: "Error rolling out menu items" };
+    }
   }
 
   async viewUserRecommendedItems(): Promise<{
@@ -41,14 +45,35 @@ export class ChefController {
     success: boolean;
     message: string | string[];
   }> {
-    const response = await notificationService.getHistoricalNotifications();
-    if (response.success) {
-      const messages: string[] = Array.isArray(response.message)
-        ? response.message
-        : [response.message];
-      return { success: true, message: messages };
+    const receiverStatusCode = "1";
+    const result = await notificationService.viewNotifications(receiverStatusCode);
+        console.log("Notifications chef:", result.message);
+
+    return {
+      success: result.success,
+      message: result.message,
+    };
+  }
+
+  async discardMenuItem(
+    name: string | number,
+    action: string
+  ): Promise<{ success: boolean; message: string }> {
+    if (action === "remove") {
+      await itemService.deleteItem(name.toString());
+      return {
+        success: true,
+        message: `Menu item '${name}' has been removed successfully.`,
+      };
+    } else if (action === "feedback") {
+      const itemId = typeof name === "string" ? parseInt(name) : name;
+      const result = await itemService.notifyForDetailFeedback(itemId);
+      return {
+        success: result.success,
+        message: result.message,
+      };
     } else {
-      return { success: false, message: ["Error fetching notifications"] };
+      return { success: false, message: "Invalid action" };
     }
   }
 
@@ -71,6 +96,8 @@ export class ChefController {
         );
       case 4:
         return this.viewNotifications();
+      case 5:
+        return this.discardMenuItem(payload.name, payload.action);
       default:
         return Promise.resolve({
           success: false,
