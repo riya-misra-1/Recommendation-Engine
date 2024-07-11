@@ -289,17 +289,6 @@ export class ItemRepository {
     }
   }
 
-  async saveNotification(itemId: number): Promise<void> {
-    try {
-      const [result] = await pool.execute<RowDataPacket[]>(
-        "INSERT INTO Notifications (item_id, message) VALUES (?, ?)",
-        [itemId, "Chef asked for detailed feedback for item"]
-      );
-      console.log("Notification saved successfully:", result);
-    } catch (error) {
-      console.error("Error saving notification:", error);
-      throw error;
-    }
-  }
+
 }
 

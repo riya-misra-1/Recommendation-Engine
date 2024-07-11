@@ -5,6 +5,7 @@ import { ItemRepository } from "../repository/itemRepository";
 import { RolledOutItem } from "../interface/rolledOutItem";
 import { Socket } from "socket.io-client";
 import { DiscardedItem } from "../interface/discardedItem";
+import { exit } from "process";
 
 const itemRepository = new ItemRepository();
 export class ChefClient {
@@ -169,23 +170,30 @@ export class ChefClient {
     return;
   }
 
-  async discardMenuItem(
+  discardMenuItem = async(
     socket: Socket
-  ): Promise<{ name: string | number; action: string }> {
+  ): Promise<{ name: string | number; action: string }> => {
     const action = await getInputFromClient(
       "Choose an action: 1. Remove item from menu, 2. Get detailed feedback from employee "
     );
-
-    // const discardedItems = await itemRepository.getAllDiscardedItems();
+    if(action !== "1" && action !== "2") {
+        console.log("Invalid action selected");
+       return { name: "", action: "" };
+        
+      }
      const discardedItems: DiscardedItem[] = await new Promise(
        (resolve, reject) => {
-         socket.on("responseDiscardedItems", (data) => {
-           console.log("Discarded Items:");
-           resolve(data);
-         });
+        socket.emit("requestDiscardedItems");
+        socket.on("responseDiscardedItems", (data: DiscardedItem[]) => {
+          resolve(data);
+        });
        }
      );
 
+     if (discardedItems.length === 0) {
+       console.log('No item present that have rating less than 2');
+       return { name: "", action: "" };
+     }
     console.log("Discarded Items:");
     console.table(discardedItems);
 
@@ -208,6 +216,7 @@ export class ChefClient {
           continue;
         } else {
           actionResult = "remove";
+          break;
         }
       } else if (action === "2") {
         itemId = parseInt(
@@ -218,7 +227,7 @@ export class ChefClient {
         );
 
         const foundItem = discardedItems.find(
-          (item) => item.item_id === itemId
+          (item) => item.id === itemId
         );
 
         if (!foundItem) {
@@ -228,11 +237,9 @@ export class ChefClient {
           continue;
         } else {
           actionResult = "feedback";
+          break;
         }
-      } else {
-        console.log("Invalid action selected");
-        break;
-      }
+      } 
     }
 
     return { name: itemName ? itemName : itemId, action: actionResult };

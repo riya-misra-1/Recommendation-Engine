@@ -49,6 +49,7 @@ io.on("connection", (socket: Socket) => {
               case "Chef":
                 response = await chefController.executeChefFunctionality(
                   index,
+                  result.user?.id as number,
                   payload
                 );
                 break;
