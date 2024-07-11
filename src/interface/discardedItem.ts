@@ -1,5 +1,5 @@
 export interface DiscardedItem {
-  item_id: number;
+  id: number;
   name: string;
   price: number;
 }

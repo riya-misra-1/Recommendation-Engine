@@ -149,23 +149,6 @@ export class ItemService {
     );
   }
 
-  async notifyForDetailFeedback(
-    itemId: number
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      await this.itemRepository.saveNotification(itemId);
-      return {
-        success: true,
-        message: `Chef asked for detailed feedback for item ${itemId}`,
-      };
-    } catch (error) {
-      console.error("Error notifying for detailed feedback:", error);
-      return {
-        success: false,
-        message: "Error notifying for detailed feedback",
-      };
-    }
-  }
   async getRolledOutItems(): Promise<RolledOutItem[] | string> {
     try {
       const rolledOutItems =
