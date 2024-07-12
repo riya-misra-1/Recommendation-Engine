@@ -135,4 +135,21 @@ export class FeedbackRepository {
       throw error;
     }
   }
+
+  async insertFeedback(
+    itemId: number,
+    response1: string,
+    response2: string,
+    response3: string
+  ) {
+    try {
+      await pool.execute(
+        `INSERT INTO Feedback_Response (item_id, response1, response2, response3) VALUES (?, ?, ?, ?)`,
+        [itemId, response1, response2, response3]
+      );
+    } catch (error) {
+      console.error("Error inserting feedback:", error);
+      throw error;
+    }
+  }
 }

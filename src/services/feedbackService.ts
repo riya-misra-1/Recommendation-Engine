@@ -1,6 +1,8 @@
 import { FeedbackRepository } from "../repository/feedbackRepository";
+import { DiscardedItemService } from "../services/discardService"; 
 
 const feedbackRepository = new FeedbackRepository();
+const discardService = new DiscardedItemService(); 
 
 export class FeedbackService {
   async takeFeedback(
@@ -167,5 +169,21 @@ export class FeedbackService {
 
     await feedbackRepository.takeRating(userId, itemId, rating, date);
     return "Rating recorded successfully.";
+  }
+
+  async saveFeedback(feedback: {
+    answer1: string;
+    answer2: string;
+    answer3: string;
+  }) {
+    const itemId = await discardService.getItemDetailForFeedback();
+
+    const feedbackRepo = new FeedbackRepository();
+    await feedbackRepo.insertFeedback(
+      itemId.itemId,
+      feedback.answer1,
+      feedback.answer2,
+      feedback.answer3
+    );
   }
 }

@@ -81,7 +81,9 @@ socket.on("result",async(message)=>{
     case "Employee":
      if (Array.isArray(data) && data.length > 0) {
        console.table(data);
-     } else {
+     } else if(data === ''){
+        console.log("");
+     } else{
        console.log("Result:", data);
      }
       break;

@@ -14,15 +14,15 @@ export class EmployeeController {
     message: string[] | string;
   }> {
     const receiverStatusCode = "2";
-  const result = await notificationService.viewNotifications(
-    receiverStatusCode
-  );
-        console.log("Notifications employee:", result.message);
+    const result = await notificationService.viewNotifications(
+      receiverStatusCode
+    );
+    console.log("Notifications employee:", result.message);
 
-  return {
-    success: result.success,
-    message: result.message,
-  };
+    return {
+      success: result.success,
+      message: result.message,
+    };
   }
 
   async voteForFood(
@@ -46,6 +46,22 @@ export class EmployeeController {
     return await feedbackService.takeRating(userId, payload);
   }
 
+  async provideFeedback(response: {
+    feedback: { answer1: string; answer2: string; answer3: string };
+  }) {
+    try {
+      if(response.feedback.answer1 === "" || response.feedback.answer2 === "" || response.feedback.answer3 === "") {
+        return { success: true, message: "" };
+      }else{
+      await feedbackService.saveFeedback(response.feedback);
+      return { success: true, message: "Feedback saved successfully" };
+      }
+    } catch (error) {
+      console.error("Error in provideFeedback:", error);
+      return { success: false, message: "Error saving feedback" };
+    }
+  }
+
   executeEmployeeFunctionality(
     index: number,
     userId: number,
@@ -60,6 +76,8 @@ export class EmployeeController {
         return this.takeFeedback(userId, payload);
       case 3:
         return this.takeRating(userId, payload);
+      case 4:
+        return this.provideFeedback(payload);
       default:
         return Promise.resolve({
           success: false,

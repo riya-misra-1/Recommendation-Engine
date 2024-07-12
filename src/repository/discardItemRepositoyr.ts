@@ -7,7 +7,7 @@ export class DiscardedItemRepository {
       const [rows] = await pool.execute<RowDataPacket[]>(
         "SELECT id,name,price,average_rating FROM Food_Item WHERE average_rating < 2 AND id NOT IN (SELECT item_id FROM DiscardedItem)"
       );
-        return rows;
+      return rows;
     } catch (error) {
       console.error("Error storing discarded items:", error);
       throw error;
@@ -95,9 +95,17 @@ export class DiscardedItemRepository {
       return false;
     }
   }
-
+  async clearDiscardedItems() {
+    try {
+      await pool.execute(`DELETE FROM DiscardedItem`);
+    } catch (error) {
+      console.error("Error clearing discarded items:", error);
+      throw error;
+    }
+  }
   async insertFeedbackRequest(itemId: number) {
     try {
+      await this.clearDiscardedItems();
       await pool.execute(`INSERT INTO DiscardedItem (item_id) VALUES (?)`, [
         itemId,
       ]);
@@ -120,6 +128,62 @@ export class DiscardedItemRepository {
       );
     } catch (error) {
       console.error("Error adding notification:", error);
+      throw error;
+    }
+  }
+  async checkUserAction(userId: number, actionType: number): Promise<boolean> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT *
+         FROM Usage_Log
+         WHERE user_id = ? AND action_type = ?`,
+        [userId, actionType]
+      );
+      console.log("Rows:", rows);
+
+      if (rows.length > 0) {
+        const lastUsed = rows[0].last_used;
+        const lastUsedDate = new Date(lastUsed);
+        const currentDate = new Date();
+
+        if (
+          lastUsedDate.getMonth() === currentDate.getMonth() &&
+          lastUsedDate.getFullYear() === currentDate.getFullYear()
+        ) {
+          return true;
+        } else {
+          await pool.execute(
+            `UPDATE Usage_Log
+             SET last_used = CURRENT_DATE()
+             WHERE user_id = ? AND action_type = ?`,
+            [userId, actionType]
+          );
+          return false;
+        }
+      } else {
+        await pool.execute(
+          `INSERT INTO Usage_Log (user_id, action_type, last_used)
+           VALUES (?, ?, CURRENT_DATE())`,
+          [userId, actionType]
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("Error checking feedback action:", error);
+      return false;
+    }
+  }
+
+  async getItemDetailForFeedback(): Promise<{itemId:number}> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT *
+         FROM DiscardedItem`
+      );
+      const row = rows[0];
+      return { itemId: row.item_id };
+    } catch (error) {
+      console.error("Error getting item detail for feedback:", error);
       throw error;
     }
   }

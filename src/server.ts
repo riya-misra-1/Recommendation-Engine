@@ -78,19 +78,17 @@ io.on("connection", (socket: Socket) => {
       socket.on("fetchFunctionalities", (role: string) => {
         socket.emit("functionalities", result.functionalities, role);
       });
-      
-    }
 
-     socket.on("requestRolledOutItems", async () => {
-       try {
-         const rolledOutItems = await itemService.getRolledOutItems();
+      socket.on("requestRolledOutItems", async () => {
+        try {
+          const rolledOutItems = await itemService.getRolledOutItems();
 
-         socket.emit("responseRolledOutItems", rolledOutItems);
-       } catch (error) {
-         console.error("Error fetching rolled-out items:", error);
-         socket.emit("error", "Failed to fetch rolled-out items");
-       }
-     });
+          socket.emit("responseRolledOutItems", rolledOutItems);
+        } catch (error) {
+          console.error("Error fetching rolled-out items:", error);
+          socket.emit("error", "Failed to fetch rolled-out items");
+        }
+      });
       socket.on("requestTodayMenu", async () => {
         try {
           const todayMenu: RolledOutItem[] | string =
@@ -119,6 +117,28 @@ io.on("connection", (socket: Socket) => {
           socket.emit("responseMenuItems", []);
         }
       });
+
+      socket.on("checkDetailFeedbackAction", async (actionType: number) => {
+        try {
+          const userId = result.user?.id as number;
+          console.log("Checking detail feedback action for user:", userId);
+          const actionStatus = await discardService.checkUserAction(
+            userId,
+            actionType
+          );
+            socket.emit("checkDetailFeedbackActionResponse", actionStatus);
+        } catch (error) {
+          console.error("Error checking detail feedback action:", error);
+          socket.emit("checkDetailFeedbackActionResponse", {
+            success: false,
+            message: "An error occurred while checking the feedback action.",
+          });
+        }
+      });
+
+    }
+
+     
   });
 
   socket.on("disconnect", () => {
