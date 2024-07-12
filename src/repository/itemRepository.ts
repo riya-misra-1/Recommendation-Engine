@@ -139,7 +139,7 @@ export class ItemRepository {
       throw error;
     }
   }
-  async getRolledOutItemsForToday(): Promise<RolledOutItem[]> {
+  async getRolledOutItemsForToday(employeeId:number): Promise<RolledOutItem[]> {
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
       const [rows] = await pool.execute<RowDataPacket[]>(
@@ -147,8 +147,14 @@ export class ItemRepository {
       FROM RollOut_Menu rm
       INNER JOIN Food_Item fi ON rm.food_item = fi.id
       INNER JOIN Meal_Type mt ON rm.meal_type = mt.id
-      WHERE DATE(rm.date) = ?`,
-        [currentDate]
+      INNER JOIN Employee_Preference ep ON ep.employee_id = ?
+      WHERE DATE(rm.date) = ?
+      ORDER BY
+      CASE WHEN fi.food_preference = ep.food_preference THEN 0 ELSE 1 END,
+      CASE WHEN fi.food_type = ep.food_type THEN 0 ELSE 1 END,
+      CASE WHEN fi.spice_level = ep.spice_level THEN 0 ELSE 1 END,
+      CASE WHEN fi.is_sweet = ep.is_sweet_tooth THEN 0 ELSE 1 END;`,
+        [employeeId,currentDate]
       );
 
       const rolledOutItems: RolledOutItem[] = rows.map((row) => ({
