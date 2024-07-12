@@ -2,35 +2,19 @@ import { Socket } from "socket.io-client";
 import { getInputFromClient } from "../utils/promptMessage";
 import { RolledOutItem } from "../interface/rolledOutItem";
 import { Votes } from "../interface/votes";
-import { DiscardedItem } from "../interface/discardedItem";
+import {FunctionResult } from "../enums/handleEmployeeFunctionalityResult";
 export class EmployeeClient {
   async handleEmployeeFunctionalities(
     index: number,
     socket: Socket
-  ): Promise<
-    | Votes
-    | void
-    | {
-        breakfast: { id: number; feedback: string };
-        lunch: { id: number; feedback: string };
-        dinner: { id: number; feedback: string };
-      }
-    | {
-        breakfast: { id: number; rating: number };
-        lunch: { id: number; rating: number };
-        dinner: { id: number; rating: number };
-      }
-    | { itemId: number; feedback: string }
-    | {
-        feedback: { answer1: string; answer2: string; answer3: string };
-      }
-  > {
+  ): Promise<FunctionResult> {
     const employeeFunctions = [
       this.viewNotifications,
       this.voteForFood,
       this.takeFeedback,
       this.takeRating,
       this.provideDetailFeedback,
+      this.updateProfile,
     ];
 
     const selectedFunction = employeeFunctions[index];
@@ -108,16 +92,20 @@ export class EmployeeClient {
         (resolve, reject) => {
           socket.emit("requestRolledOutItems");
           socket.on("responseRolledOutItems", (data: RolledOutItem[]) => {
-            console.log(data);
             resolve(data);
           });
         }
       );
-      console.table(rolledOutItems);
+      if (rolledOutItems.length === 0) {
+        console.log("No items available for voting.");
+        return { breakfast: 0, lunch: 0, dinner: 0 };
+      } else {
+        console.table(rolledOutItems);
 
-      const votes = await this.promptForVotes(rolledOutItems);
-      console.log("Votes:", votes);
-      return votes;
+        const votes = await this.promptForVotes(rolledOutItems);
+        console.log("Votes:", votes);
+        return votes;
+      }
     } catch (error) {
       console.error("Error in voteForFood:", error);
       throw error;
@@ -139,29 +127,41 @@ export class EmployeeClient {
           });
         }
       );
-      console.table(nthDayItems);
+      if (nthDayItems.length === 0) {
+        console.log("No items available for feedback.");
+        return {
+          breakfast: { id: 0, feedback: "" },
+          lunch: { id: 0, feedback: "" },
+          dinner: { id: 0, feedback: "" },
+        };
+      } else {
+        console.table(nthDayItems);
 
-      const feedback: {
-        breakfast: { id: number; feedback: string };
-        lunch: { id: number; feedback: string };
-        dinner: { id: number; feedback: string };
-      } = {
-        breakfast: {
-          id:
-            nthDayItems.find((item) => item.mealType === "Breakfast")?.id || 0,
-          feedback: await getInputFromClient("Enter feedback for Breakfast: "),
-        },
-        lunch: {
-          id: nthDayItems.find((item) => item.mealType === "Lunch")?.id || 0,
-          feedback: await getInputFromClient("Enter feedback for Lunch: "),
-        },
-        dinner: {
-          id: nthDayItems.find((item) => item.mealType === "Dinner")?.id || 0,
-          feedback: await getInputFromClient("Enter feedback for Dinner: "),
-        },
-      };
+        const feedback: {
+          breakfast: { id: number; feedback: string };
+          lunch: { id: number; feedback: string };
+          dinner: { id: number; feedback: string };
+        } = {
+          breakfast: {
+            id:
+              nthDayItems.find((item) => item.mealType === "Breakfast")?.id ||
+              0,
+            feedback: await getInputFromClient(
+              "Enter feedback for Breakfast: "
+            ),
+          },
+          lunch: {
+            id: nthDayItems.find((item) => item.mealType === "Lunch")?.id || 0,
+            feedback: await getInputFromClient("Enter feedback for Lunch: "),
+          },
+          dinner: {
+            id: nthDayItems.find((item) => item.mealType === "Dinner")?.id || 0,
+            feedback: await getInputFromClient("Enter feedback for Dinner: "),
+          },
+        };
 
-      return feedback;
+        return feedback;
+      }
     } catch (error) {
       console.error("Error in takeFeedback:", error);
       throw error;
@@ -244,7 +244,7 @@ export class EmployeeClient {
         );
         const answer3 = await getInputFromClient(`Q3. Share your mom’s recipe`);
 
-        return {feedback: { answer1, answer2, answer3 } };
+        return { feedback: { answer1, answer2, answer3 } };
       } else {
         console.log("You have already provided feedback for this item.");
         return {
@@ -255,5 +255,68 @@ export class EmployeeClient {
       console.error("Error in askForDetailFeedback:", error);
       throw error;
     }
+  }
+
+  async updateProfile(socket: Socket): Promise<{
+    foodPreference: number;
+    spiceLevel: number;
+    foodType: number;
+    isSweetTooth: boolean;
+  }> {
+    console.log("Please answer these questions to know your preferences");
+
+    let foodPreference: number;
+    while (true) {
+      const foodPreferenceInput = await getInputFromClient(
+        `1) Please select one-\n1. Vegetarian\n2. Non Vegetarian\n3. Eggetarian`
+      );
+      foodPreference = parseInt(foodPreferenceInput, 10);
+      if ([1, 2, 3].includes(foodPreference)) {
+        break;
+      } else {
+        console.error("Invalid food preference selection. Please try again.");
+      }
+    }
+
+    let spiceLevel: number;
+    while (true) {
+      const spiceLevelInput = await getInputFromClient(
+        `2) Please select your spice level-\n1. High\n2. Medium\n3. Low`
+      );
+      spiceLevel = parseInt(spiceLevelInput, 10);
+      if ([1, 2, 3].includes(spiceLevel)) {
+        break;
+      } else {
+        console.error("Invalid spice level selection. Please try again.");
+      }
+    }
+
+    let foodType: number;
+    while (true) {
+      const foodTypeInput = await getInputFromClient(
+        `3) What do you prefer most?\n1. North Indian\n2. South Indian\n3. Other`
+      );
+      foodType = parseInt(foodTypeInput, 10);
+      if ([1, 2, 3].includes(foodType)) {
+        break;
+      } else {
+        console.error("Invalid food type selection. Please try again.");
+      }
+    }
+
+    let isSweetTooth: boolean;
+    while (true) {
+      const isSweetToothInput = await getInputFromClient(
+        `4) Do you have a sweet tooth?\n1. Yes\n2. No`
+      );
+      if ([1, 2].includes(parseInt(isSweetToothInput, 10))) {
+        isSweetTooth = parseInt(isSweetToothInput, 10) === 1;
+        break;
+      } else {
+        console.error("Invalid sweet tooth selection. Please try again.");
+      }
+    }
+    console.log("Profile updated successfully.");
+    return { foodPreference, spiceLevel, foodType, isSweetTooth };
   }
 }

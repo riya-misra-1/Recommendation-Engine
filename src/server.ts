@@ -81,8 +81,8 @@ io.on("connection", (socket: Socket) => {
 
       socket.on("requestRolledOutItems", async () => {
         try {
-          const rolledOutItems = await itemService.getRolledOutItems();
-
+          const rolledOutItems = await itemService.getRolledOutItems(result.user?.id as number);
+          console.log("Rolled out items:", rolledOutItems);
           socket.emit("responseRolledOutItems", rolledOutItems);
         } catch (error) {
           console.error("Error fetching rolled-out items:", error);

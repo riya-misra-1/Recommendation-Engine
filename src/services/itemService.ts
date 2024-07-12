@@ -149,10 +149,10 @@ export class ItemService {
     );
   }
 
-  async getRolledOutItems(): Promise<RolledOutItem[] | string> {
+  async getRolledOutItems(employeeId:number): Promise<RolledOutItem[] | string> {
     try {
       const rolledOutItems =
-        await this.itemRepository.getRolledOutItemsForToday();
+        await this.itemRepository.getRolledOutItemsForToday(employeeId);
       return rolledOutItems;
     } catch (error) {
       console.error("Error in getRolledOutItems service function:", error);

@@ -20,5 +20,6 @@ export const RoleFunctionalities: Functionalities = {
     "Provide Feedback",
     "Provide Rating",
     "Provide Detailed Feedback",
+    "Update Profile"
   ],
 };
