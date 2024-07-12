@@ -81,7 +81,9 @@ export class ItemRepository {
       await this.addNotification(
         `Menu item '${name}' has been updated on ${new Date()
           .toISOString()
-          .slice(0, 10)}.`,1,3
+          .slice(0, 10)}.`,
+        1,
+        3
       );
     } catch (error) {
       console.error("Error updating menu item:", error);
@@ -96,7 +98,9 @@ export class ItemRepository {
       await this.addNotification(
         `Menu item '${name}' has been deleted on ${new Date()
           .toISOString()
-          .slice(0, 10)}.`,1,3
+          .slice(0, 10)}.`,
+        1,
+        3
       );
 
       await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
@@ -115,7 +119,11 @@ export class ItemRepository {
 
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
-      await this.addNotification(`Tomorrow's menu is rolled out by the chef.`,2,2);
+      await this.addNotification(
+        `Tomorrow's menu is rolled out by the chef.`,
+        2,
+        2
+      );
       const queries = itemsToRollout.map(async ({ itemId, mealType }) => {
         const mealTypeId = mealTypeMap[mealType];
 
@@ -289,6 +297,22 @@ export class ItemRepository {
     }
   }
 
+  async getItemNameById(itemId: number): Promise<string> {
+    try {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        "SELECT name FROM Food_Item WHERE id = ?",
+        [itemId]
+      );
 
+      if (rows.length > 0) {
+        return rows[0].name;
+      } else {
+        throw new Error("Item not found");
+      }
+    } catch (error) {
+      console.error("Error fetching item name:", error);
+      throw error;
+    }
+  }
 }
 

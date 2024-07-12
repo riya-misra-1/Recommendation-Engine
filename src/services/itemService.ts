@@ -167,4 +167,13 @@ export class ItemService {
       return "Error in getRolledOutItemsForToday:";
     }
   }
+  async getItemNameById(itemId: number): Promise<string> {
+    try {
+      const itemName = await this.itemRepository.getItemNameById(itemId);
+      return itemName;
+    } catch (error) {
+      console.error("Error in getItemNameById service:", error);
+      throw error;
+    }
+  }
 }

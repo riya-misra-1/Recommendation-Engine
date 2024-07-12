@@ -44,9 +44,10 @@ export class DiscardedItemService {
       const success = await discardRepository.checkUserFeedbackAction(userId);
       console.log("Success:", success);
       if (success) {
+        const itemName = await itemService.getItemNameById(itemId);
         await discardRepository.insertFeedbackRequest(itemId);
         await discardRepository.addNotification(
-          `Detailed feedback requested for item ${itemId}`,
+          `We are trying to improve your experience with ${itemName}.`,
           2,
           userId
         );
@@ -65,5 +66,23 @@ export class DiscardedItemService {
         message: "An error occurred while trying to request feedback.",
       };
     }
+  }
+
+  async checkUserAction(userId: number, actionType: number): Promise<boolean> {
+    try {
+      const hasPerformedAction = await discardRepository.checkUserAction(
+        userId,
+        actionType
+      );
+      console.log("Has performed action:", hasPerformedAction);
+      return hasPerformedAction;
+    } catch (error) {
+      console.error("Error checking user action:", error);
+      throw error;
+    }
+  }
+
+  async getItemDetailForFeedback(): Promise<{itemId:number}> {
+    return discardRepository.getItemDetailForFeedback();
   }
 }
