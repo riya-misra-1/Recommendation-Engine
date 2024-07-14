@@ -10,7 +10,7 @@ const adminClient = new AdminClient();
 const chefClient = new ChefClient();
 const employeeClient = new EmployeeClient();
 
-async function inputUserCredentials() {
+export async function inputUserCredentials() {
   const email = await getInputFromClient("Enter your email: ");
   const password = await getInputFromClient("Enter your password: ");
   socket.emit("login", email, password);
@@ -35,11 +35,10 @@ async function executeFunctionality(
 
     switch (role) {
       case "Admin":
-        payload = await adminClient.handleAdminFunctionalities(index);
+        payload = await adminClient.handleAdminFunctionalities(index, socket);
         break;
       case "Chef":
         payload = await chefClient.handleChefFunctionalities(index,socket);
-        console.log("Payload:", payload);
         break;
       case "Employee":
         payload = await employeeClient.handleEmployeeFunctionalities(index, socket);
@@ -104,6 +103,10 @@ socket.on("result",async(message)=>{
  socket.emit("fetchFunctionalities", role);
 });
 
+socket.on("logoutSuccess", () => {
+  console.log("Logout successful.");
+  inputUserCredentials();
+});
 socket.on("disconnect", () => {
   console.error("Server disconnected or stopped.");
 });

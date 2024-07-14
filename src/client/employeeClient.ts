@@ -3,6 +3,7 @@ import { getInputFromClient } from "../utils/promptMessage";
 import { RolledOutItem } from "../interface/rolledOutItem";
 import { Votes } from "../interface/votes";
 import {FunctionResult } from "../enums/handleEmployeeFunctionalityResult";
+import { exit } from "process";
 export class EmployeeClient {
   async handleEmployeeFunctionalities(
     index: number,
@@ -15,6 +16,7 @@ export class EmployeeClient {
       this.takeRating,
       this.provideDetailFeedback,
       this.updateProfile,
+      this.logOut,
     ];
 
     const selectedFunction = employeeFunctions[index];
@@ -318,5 +320,10 @@ export class EmployeeClient {
     }
     console.log("Profile updated successfully.");
     return { foodPreference, spiceLevel, foodType, isSweetTooth };
+  }
+
+  logOut(socket:Socket):void{
+    console.log("Re run the application to login again.");
+    exit();
   }
 }

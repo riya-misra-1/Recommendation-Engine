@@ -47,7 +47,7 @@ export class ChefClient {
       });
     });
 
-    console.table(menuItems); 
+    console.table(menuItems);
 
     for (const mealType of mealTypes) {
       let count = parseInt(
@@ -78,7 +78,7 @@ export class ChefClient {
         }
 
         itemsToRollout.push({ itemId, mealType });
-        count--; 
+        count--;
       }
     }
 
@@ -119,15 +119,18 @@ export class ChefClient {
 
       const breakfastItemId = await this.validateItemSelection(
         "breakfast",
-        rolledOutItems,socket
+        rolledOutItems,
+        socket
       );
       const lunchItemId = await this.validateItemSelection(
         "lunch",
-        rolledOutItems,socket
+        rolledOutItems,
+        socket
       );
       const dinnerItemId = await this.validateItemSelection(
         "dinner",
-        rolledOutItems,socket
+        rolledOutItems,
+        socket
       );
 
       console.log("Menu finalized successfully.");
@@ -170,30 +173,29 @@ export class ChefClient {
     return;
   }
 
-  discardMenuItem = async(
+  discardMenuItem = async (
     socket: Socket
   ): Promise<{ name: string | number; action: string }> => {
     const action = await getInputFromClient(
       "Choose an action: 1. Remove item from menu, 2. Get detailed feedback from employee "
     );
-    if(action !== "1" && action !== "2") {
-        console.log("Invalid action selected");
-       return { name: "", action: "" };
-        
-      }
-     const discardedItems: DiscardedItem[] = await new Promise(
-       (resolve, reject) => {
+    if (action !== "1" && action !== "2") {
+      console.log("Invalid action selected");
+      return { name: "", action: "" };
+    }
+    const discardedItems: DiscardedItem[] = await new Promise(
+      (resolve, reject) => {
         socket.emit("requestDiscardedItems");
         socket.on("responseDiscardedItems", (data: DiscardedItem[]) => {
           resolve(data);
         });
-       }
-     );
+      }
+    );
 
-     if (discardedItems.length === 0) {
-       console.log('No item present that have rating less than 2');
-       return { name: "", action: "" };
-     }
+    if (discardedItems.length === 0) {
+      console.log("No item present that have rating less than 2");
+      return { name: "", action: "" };
+    }
     console.log("Discarded Items:");
     console.table(discardedItems);
 
@@ -226,9 +228,7 @@ export class ChefClient {
           10
         );
 
-        const foundItem = discardedItems.find(
-          (item) => item.id === itemId
-        );
+        const foundItem = discardedItems.find((item) => item.id === itemId);
 
         if (!foundItem) {
           console.error(
@@ -239,9 +239,14 @@ export class ChefClient {
           actionResult = "feedback";
           break;
         }
-      } 
+      }
     }
 
     return { name: itemName ? itemName : itemId, action: actionResult };
+  };
+
+  logOut(socket: Socket): void {
+    console.log("Re run the application to login again.");
+    exit();
   }
 }
