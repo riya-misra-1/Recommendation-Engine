@@ -2,9 +2,7 @@ import { RowDataPacket } from "mysql2";
 import pool from "../db-connection";
 
 export class NotificationRepository {
-  async getNotifications(
-    receiverStatusCode: string
-  ): Promise<string[]> {
+  async getNotifications(receiverStatusCode: string): Promise<string[]> {
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
       console.log("Current date:", currentDate);
@@ -27,5 +25,15 @@ export class NotificationRepository {
     }
   }
 
-  
+  async addNotification(
+    message: string,
+    type: number,
+    toWhom: number
+  ): Promise<void> {
+    const currentDate = new Date().toISOString().slice(0, 10);
+    await pool.execute(
+      "INSERT INTO Notification (notification, date, notification_type, to_whom) VALUES (?, ?, ?, ?)",
+      [message, currentDate, type, toWhom]
+    );
+  }
 }

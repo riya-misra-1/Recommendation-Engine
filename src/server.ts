@@ -79,11 +79,24 @@ io.on("connection", (socket: Socket) => {
         socket.emit("functionalities", result.functionalities, role);
       });
 
-      socket.on("requestRolledOutItems", async () => {
+      socket.on("requestRolledOutItemsForEmployee", async () => {
         try {
-          const rolledOutItems = await itemService.getRolledOutItems(result.user?.id as number);
+          const rolledOutItems = await itemService.getRolledOutItemsForEmployee(
+            result.user?.id as number
+          );
           console.log("Rolled out items:", rolledOutItems);
-          socket.emit("responseRolledOutItems", rolledOutItems);
+          socket.emit("responseRolledOutItemsForEmployee", rolledOutItems);
+        } catch (error) {
+          console.error("Error fetching rolled-out items:", error);
+          socket.emit("error", "Failed to fetch rolled-out items");
+        }
+      });
+
+      socket.on("requestRolledOutItemsForChef", async () => {
+        try {
+          const rolledOutItems = await itemService.getRolledOutItemsForChef();
+          console.log("Rolled out items:", rolledOutItems);
+          socket.emit("responseRolledOutItemsForChef", rolledOutItems);
         } catch (error) {
           console.error("Error fetching rolled-out items:", error);
           socket.emit("error", "Failed to fetch rolled-out items");
@@ -117,6 +130,7 @@ io.on("connection", (socket: Socket) => {
           socket.emit("responseMenuItems", []);
         }
       });
+      
 
       socket.on("checkDetailFeedbackAction", async (actionType: number) => {
         try {

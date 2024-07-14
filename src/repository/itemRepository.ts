@@ -6,17 +6,17 @@ import { RolledOutItem } from "../interface/rolledOutItem";
 import { Votes } from "../interface/votes";
 
 export class ItemRepository {
-  async addNotification(
-    message: string,
-    type: number,
-    toWhom: number
-  ): Promise<void> {
-    const currentDate = new Date().toISOString().slice(0, 10);
-    await pool.execute(
-      "INSERT INTO Notification (notification, date, notification_type, to_whom) VALUES (?, ?, ?, ?)",
-      [message, currentDate, type, toWhom]
-    );
-  }
+  // async addNotification(
+  //   message: string,
+  //   type: number,
+  //   toWhom: number
+  // ): Promise<void> {
+  //   const currentDate = new Date().toISOString().slice(0, 10);
+  //   await pool.execute(
+  //     "INSERT INTO Notification (notification, date, notification_type, to_whom) VALUES (?, ?, ?, ?)",
+  //     [message, currentDate, type, toWhom]
+  //   );
+  // }
 
   async addItem(menuItem: MenuItem): Promise<void> {
     const { category, name, price, availability } = menuItem;
@@ -24,13 +24,6 @@ export class ItemRepository {
       await pool.execute(
         "INSERT INTO Food_Item(category, name, price, availability_status) VALUES (?, ?, ?, ?)",
         [category, name, price, availability]
-      );
-      await this.addNotification(
-        `Menu item '${name}' has been added on ${new Date()
-          .toISOString()
-          .slice(0, 10)}.`,
-        1,
-        3
       );
     } catch (error) {
       console.error("Error adding menu item:", error);
@@ -77,14 +70,6 @@ export class ItemRepository {
           [value, name]
         );
       }
-
-      await this.addNotification(
-        `Menu item '${name}' has been updated on ${new Date()
-          .toISOString()
-          .slice(0, 10)}.`,
-        1,
-        3
-      );
     } catch (error) {
       console.error("Error updating menu item:", error);
       throw error;
@@ -93,16 +78,6 @@ export class ItemRepository {
 
   async deleteItem(name: string): Promise<void> {
     try {
-      await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
-
-      await this.addNotification(
-        `Menu item '${name}' has been deleted on ${new Date()
-          .toISOString()
-          .slice(0, 10)}.`,
-        1,
-        3
-      );
-
       await pool.execute("DELETE FROM Food_Item WHERE name = ?", [name]);
     } catch (error) {
       console.error("Error deleting menu item:", error);
@@ -119,11 +94,6 @@ export class ItemRepository {
 
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
-      await this.addNotification(
-        `Tomorrow's menu is rolled out by the chef.`,
-        2,
-        2
-      );
       const queries = itemsToRollout.map(async ({ itemId, mealType }) => {
         const mealTypeId = mealTypeMap[mealType];
 
@@ -139,7 +109,9 @@ export class ItemRepository {
       throw error;
     }
   }
-  async getRolledOutItemsForToday(employeeId:number): Promise<RolledOutItem[]> {
+  async getRolledOutItemsForTodayForEmployee(
+    employeeId: number
+  ): Promise<RolledOutItem[]> {
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
       const [rows] = await pool.execute<RowDataPacket[]>(
@@ -154,7 +126,35 @@ export class ItemRepository {
       CASE WHEN fi.food_type = ep.food_type THEN 0 ELSE 1 END,
       CASE WHEN fi.spice_level = ep.spice_level THEN 0 ELSE 1 END,
       CASE WHEN fi.is_sweet = ep.is_sweet_tooth THEN 0 ELSE 1 END;`,
-        [employeeId,currentDate]
+        [employeeId, currentDate]
+      );
+
+      const rolledOutItems: RolledOutItem[] = rows.map((row) => ({
+        id: row.food_item_id,
+        itemName: row.item_name,
+        price: row.price,
+        sentiments: row.sentiments,
+        averageRating: row.average_rating,
+        mealType: row.meal_type,
+      }));
+
+      return rolledOutItems;
+    } catch (error) {
+      console.error("Error fetching rolled out items:", error);
+      throw error;
+    }
+  }
+
+  async getRolledOutItemsForTodayForChef(): Promise<RolledOutItem[]> {
+    try {
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT fi.id AS food_item_id, fi.name AS item_name, fi.price, fi.sentiments, fi.average_rating, mt.type AS meal_type
+      FROM RollOut_Menu rm
+      INNER JOIN Food_Item fi ON rm.food_item = fi.id
+      INNER JOIN Meal_Type mt ON rm.meal_type = mt.id
+      WHERE DATE(rm.date) = ?`,
+        [currentDate]
       );
 
       const rolledOutItems: RolledOutItem[] = rows.map((row) => ({

@@ -9,11 +9,6 @@ import { exit } from "process";
 
 const itemRepository = new ItemRepository();
 export class ChefClient {
-  // private socket: Socket;
-
-  // constructor(socket: Socket) {
-  //   this.socket = socket;
-  // }
   async handleChefFunctionalities(index: number, socket: Socket): Promise<any> {
     const chefFunctions = [
       this.viewMenu,
@@ -22,6 +17,7 @@ export class ChefClient {
       this.finalizeMenu,
       this.viewNotifications,
       this.discardMenuItem,
+      this.logOut,
     ];
 
     const selectedFunction = chefFunctions[index];
@@ -96,25 +92,24 @@ export class ChefClient {
 
   finalizeMenu = async (
     socket: Socket
-  ): Promise<
-    | {
+  ): Promise<{
         breakfast: number;
         lunch: number;
         dinner: number;
       }
-    | undefined
-  > => {
-    try {
+    | undefined > => {
       // const rolledOutItems = await itemRepository.getRolledOutItemsForToday();
-      const rolledOutItems = await new Promise<RolledOutItem[]>(
-        (resolve, reject) => {
-          socket.emit("requestRolledOutItems");
-          socket.on("responseRolledOutItems", (data: RolledOutItem[]) => {
-            console.log(data);
-            resolve(data);
-          });
-        }
-      );
+     const rolledOutItems = await new Promise<RolledOutItem[]>(
+       (resolve, reject) => {
+         socket.emit("requestRolledOutItemsForChef");
+         socket.on(
+           "responseRolledOutItemsForChef",
+           (data: RolledOutItem[]) => {
+             resolve(data);
+           }
+         );
+       }
+     );
       console.table(rolledOutItems);
 
       const breakfastItemId = await this.validateItemSelection(
@@ -139,10 +134,6 @@ export class ChefClient {
         lunch: lunchItemId,
         dinner: dinnerItemId,
       };
-    } catch (error) {
-      console.error("Error finalizing menu:", error);
-      throw error;
-    }
   };
 
   validateItemSelection = async (
