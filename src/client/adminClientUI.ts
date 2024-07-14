@@ -19,6 +19,7 @@ export class AdminClient {
       this.updateMenuItem,
       this.deleteMenuItem,
       this.viewMenu,
+      this.logOut,
     ];
 
     const selectedFunction = adminFunctions[index];
@@ -70,9 +71,18 @@ export class AdminClient {
 
     console.table(menuItems);
 
-    const name = await getInputFromClient(
-      "Enter the name of the item to update: "
-    );
+    let name: string;
+    const validItemNames = menuItems.map((item) => item.name);
+
+    while (true) {
+      name = await getInputFromClient("Enter the name of the item to update: ");
+      if (validItemNames.includes(name)) {
+        break;
+      } else {
+        console.log("Invalid item name entered. Please try again.");
+      }
+    }
+
     const updates = [];
 
     const updatePrice = await getInputFromClient(
@@ -109,7 +119,7 @@ export class AdminClient {
     return;
   }
   logOut(socket: Socket): void {
-    console.log('Re run the application to login again.')
+    console.log("Re run the application to login again.");
     exit();
   }
 }

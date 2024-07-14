@@ -92,10 +92,13 @@ export class EmployeeClient {
     try {
       const rolledOutItems = await new Promise<RolledOutItem[]>(
         (resolve, reject) => {
-          socket.emit("requestRolledOutItems");
-          socket.on("responseRolledOutItems", (data: RolledOutItem[]) => {
-            resolve(data);
-          });
+          socket.emit("requestRolledOutItemsForEmployee");
+          socket.on(
+            "responseRolledOutItemsForEmployee",
+            (data: RolledOutItem[]) => {
+              resolve(data);
+            }
+          );
         }
       );
       if (rolledOutItems.length === 0) {

@@ -3,19 +3,30 @@ import { MenuItem } from "../interface/menuItem";
 import { RolledOutItem } from "../interface/rolledOutItem";
 import { Votes } from "../interface/votes";
 import { ItemRepository } from "../repository/itemRepository";
+import { NotificationService } from "./notificationService";
 
 export class ItemService {
   private itemRepository: ItemRepository;
-
+  private notificationService: NotificationService;
   constructor() {
     this.itemRepository = new ItemRepository();
+    this.notificationService = new NotificationService();
   }
 
   async addItem(
     menuItem: MenuItem
   ): Promise<{ success: boolean; message: string }> {
     try {
+      const { category, name, price, availability } = menuItem;
+
       await this.itemRepository.addItem(menuItem);
+      await this.notificationService.addNotification(
+        `Menu item '${name}' has been added on ${new Date()
+          .toISOString()
+          .slice(0, 10)}.`,
+        1,
+        3
+      );
       return { success: true, message: "Menu item added successfully" };
     } catch (error) {
       return { success: false, message: "Error adding menu Item" };
@@ -46,6 +57,13 @@ export class ItemService {
   ): Promise<{ success: boolean; message: string }> {
     try {
       await this.itemRepository.updateItem(name, field, value);
+      await this.notificationService.addNotification(
+        `Menu item '${name}' has been updated on ${new Date()
+          .toISOString()
+          .slice(0, 10)}.`,
+        1,
+        3
+      );
       return {
         success: true,
         message: `${field} updated successfully for item ${name}`,
@@ -61,6 +79,14 @@ export class ItemService {
   ): Promise<{ success: boolean; message: string }> {
     try {
       await this.itemRepository.deleteItem(name);
+
+      await this.notificationService.addNotification(
+        `Menu item '${name}' has been deleted on ${new Date()
+          .toISOString()
+          .slice(0, 10)}.`,
+        1,
+        3
+      );
       return { success: true, message: "Menu item deleted successfully" };
     } catch (error) {
       console.error("Error deleting menu item:", error);
@@ -89,6 +115,11 @@ export class ItemService {
     try {
       const rolledOutItem = await this.itemRepository.saveMenuRollout(
         itemsToRollout
+      );
+      await this.notificationService.addNotification(
+        `Tomorrow's menu is rolled out by the chef.`,
+        2,
+        2
       );
       return { success: true, message: rolledOutItem };
     } catch (error) {
@@ -149,10 +180,25 @@ export class ItemService {
     );
   }
 
-  async getRolledOutItems(employeeId:number): Promise<RolledOutItem[] | string> {
+  async getRolledOutItemsForEmployee(
+    employeeId: number
+  ): Promise<RolledOutItem[] | string> {
     try {
       const rolledOutItems =
-        await this.itemRepository.getRolledOutItemsForToday(employeeId);
+        await this.itemRepository.getRolledOutItemsForTodayForEmployee(
+          employeeId
+        );
+      return rolledOutItems;
+    } catch (error) {
+      console.error("Error in getRolledOutItems service function:", error);
+      return "Error in getRolledOutItems service function:";
+    }
+  }
+  async getRolledOutItemsForChef(
+  ): Promise<RolledOutItem[] | string> {
+    try {
+      const rolledOutItems =
+        await this.itemRepository.getRolledOutItemsForTodayForChef();
       return rolledOutItems;
     } catch (error) {
       console.error("Error in getRolledOutItems service function:", error);
