@@ -1,14 +1,18 @@
+import { Socket } from "socket.io-client";
 import { Categories } from "../interface/categories";
 import { MenuItem } from "../interface/menuItem";
 import { getInputFromClient } from "../utils/promptMessage";
+import { exit } from "process";
 
 export class AdminClient {
   async handleAdminFunctionalities(
-    index: number
+    index: number,
+    socket: Socket
   ): Promise<
     | MenuItem
     | { name: string; updates: { field: string; value: string | number }[] }
-    | {name:string} | void
+    | { name: string }
+    | void
   > {
     const adminFunctions = [
       this.addMenuItem,
@@ -19,13 +23,13 @@ export class AdminClient {
 
     const selectedFunction = adminFunctions[index];
     if (selectedFunction) {
-      return selectedFunction();
+      return selectedFunction(socket);
     } else {
       console.error("Invalid functionality index");
     }
   }
 
-  async addMenuItem(): Promise<MenuItem> {
+  async addMenuItem(socket: Socket): Promise<MenuItem> {
     console.log("Available categories");
     Categories.forEach((category) => {
       console.log(category.category);
@@ -43,17 +47,29 @@ export class AdminClient {
     const availability = status === "true";
 
     const foodItem: MenuItem = {
-      category, name, price, availability,
-      id: 0
+      category,
+      name,
+      price,
+      availability,
+      id: 0,
     };
     console.log("Item details:", foodItem);
     return foodItem;
   }
 
-  async updateMenuItem(): Promise<{
+  async updateMenuItem(socket: Socket): Promise<{
     name: string;
     updates: { field: string; value: string | number }[];
   }> {
+    const menuItems = await new Promise<MenuItem[]>((resolve, reject) => {
+      socket.emit("requestMenuItems");
+      socket.on("responseMenuItems", (data: MenuItem[]) => {
+        resolve(data);
+      });
+    });
+
+    console.table(menuItems);
+
     const name = await getInputFromClient(
       "Enter the name of the item to update: "
     );
@@ -82,14 +98,18 @@ export class AdminClient {
     return { name, updates };
   }
 
-  async deleteMenuItem(): Promise<{name:string}> {
+  async deleteMenuItem(socket: Socket): Promise<{ name: string }> {
     const name = await getInputFromClient(
       "Enter the name of the item to delete: "
     );
-    return {name};
+    return { name };
   }
 
-  async viewMenu(): Promise<void> {
+  async viewMenu(socket: Socket): Promise<void> {
     return;
+  }
+  logOut(socket: Socket): void {
+    console.log('Re run the application to login again.')
+    exit();
   }
 }
