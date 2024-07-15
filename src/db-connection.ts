@@ -1,13 +1,15 @@
 import mysql from "mysql2/promise";
+import { dbConfig } from "./config/dbConfig";
 
 const pool = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "root",
-  database: "RecommendationEngine",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+  host: dbConfig.host,
+  user: dbConfig.user,
+  password: dbConfig.password,
+  database: dbConfig.database,
+  waitForConnections: dbConfig.waitForConnections,
+  connectionLimit: dbConfig.connectionLimit,
+  queueLimit: dbConfig.queueLimit,
 });
 
 export default pool;
+
