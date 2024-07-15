@@ -98,7 +98,6 @@ export class ChefClient {
         dinner: number;
       }
     | undefined > => {
-      // const rolledOutItems = await itemRepository.getRolledOutItemsForToday();
      const rolledOutItems = await new Promise<RolledOutItem[]>(
        (resolve, reject) => {
          socket.emit("requestRolledOutItemsForChef");
